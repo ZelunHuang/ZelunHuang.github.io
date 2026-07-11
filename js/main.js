@@ -4,6 +4,27 @@ if (yearElement) {
   yearElement.textContent = new Date().getFullYear();
 }
 
+// --- Dropdown toggle (click + hover) ---
+
+document.querySelectorAll('.dropdown').forEach((dd) => {
+  const btn = dd.querySelector('.dropbtn');
+  const menu = dd.querySelector('.dropdown-menu');
+  if (!btn || !menu) return;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu.classList.toggle('show');
+  });
+
+  dd.addEventListener('mouseenter', () => menu.classList.add('show'));
+  dd.addEventListener('mouseleave', () => menu.classList.remove('show'));
+
+  // Close on click outside
+  document.addEventListener('click', (e) => {
+    if (!dd.contains(e.target)) menu.classList.remove('show');
+  });
+});
+
 const timestamp = new Date().toLocaleString('en-US', {
   hour12: false,
 });

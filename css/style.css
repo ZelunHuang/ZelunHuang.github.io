@@ -115,7 +115,8 @@ img {
   z-index: 20;
 }
 
-.dropdown:hover .dropdown-menu {
+.dropdown:hover .dropdown-menu,
+.dropdown-menu.show {
   display: block;
 }
 
