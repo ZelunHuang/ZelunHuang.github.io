@@ -412,12 +412,6 @@ h1 {
   gap: 12px;
 }
 
-.contact-buttons {
-  grid-template-columns: repeat(3, minmax(0, 200px));
-  justify-content: center;
-  margin-top: 8px;
-}
-
 .link-stack a,
 .tag-list a {
   display: inline-flex;
