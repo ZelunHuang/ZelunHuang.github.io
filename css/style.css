@@ -92,6 +92,36 @@ img {
   align-items: center;
 }
 
+body.zh-home .hero {
+  padding: 40px 0 40px;
+}
+
+body.zh-home .hero-grid {
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 18px;
+  align-items: start;
+}
+
+body.zh-home .hero-title {
+  font-size: clamp(1.9rem, 3.6vw, 3rem);
+  line-height: 1.1;
+}
+
+body.zh-home .profile-card {
+  width: 220px;
+  padding: 12px;
+  justify-self: end;
+  align-self: start;
+}
+
+body.zh-home .profile-card img {
+  aspect-ratio: 1 / 1;
+}
+
+body.zh-home .profile-card figcaption {
+  margin-top: 10px;
+}
+
 .eyebrow {
   margin: 0 0 12px;
   text-transform: uppercase;
@@ -320,6 +350,15 @@ h1 {
 @media (max-width: 860px) {
   .hero-grid {
     grid-template-columns: 1fr;
+  }
+
+  body.zh-home .hero-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.zh-home .profile-card {
+    width: min(220px, 72vw);
+    justify-self: start;
   }
 
   .grid-3,
