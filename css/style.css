@@ -503,6 +503,14 @@ h1 {
   text-decoration: none;
 }
 
+.contact-divider {
+  margin: 48px auto 40px;
+  border: 0;
+  height: 1px;
+  background: var(--border);
+  max-width: 480px;
+}
+
 @media (max-width: 860px) {
   .hero-grid {
     grid-template-columns: 1fr;
