@@ -97,9 +97,9 @@ body.zh-home .hero {
 }
 
 body.zh-home .hero-grid {
-  grid-template-columns: 220px minmax(0, 1fr) 300px;
+  grid-template-columns: 150px minmax(0, 1fr) 300px;  /* 同步更新列宽 */
   gap: 24px;
-  align-items: start;
+  align-items: center;       /* 垂直居中 */
 }
 
 body.zh-home .zh-hero-main {
@@ -112,10 +112,10 @@ body.zh-home .hero-title {
 }
 
 body.zh-home .zh-hero-avatar {
-  margin: 0;
-  width: 220px;
+  width: 150px;              /* 原 220px */
   justify-self: start;
-  align-self: start;
+  align-self: center;        /* 垂直居中，让头像与标题更平衡 */
+  margin: 0;
 }
 
 body.zh-home .zh-hero-avatar img {
@@ -135,10 +135,11 @@ body.zh-home .zh-hero-avatar figcaption {
 }
 
 body.zh-home .zh-news-panel {
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
+  border-left: 4px solid var(--accent);   /* 左侧强调线 */
   border-radius: 16px;
   background: var(--surface);
-  box-shadow: var(--shadow);
+  box-shadow: 0 4px 16px rgba(29, 78, 216, 0.10); /* 稍明显的阴影 */
   padding: 16px 18px;
 }
 
