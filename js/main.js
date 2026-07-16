@@ -56,24 +56,13 @@ async function fetchRecentCommits(count) {
   }
 }
 
-// Render recent updates on the homepage
-const updatesList = document.getElementById('updates-list');
-const updatesTimestamp = document.getElementById('updates-timestamp');
-if (updatesList && updatesTimestamp) {
-  fetchRecentCommits(5).then((commits) => {
-    if (!commits || commits.length === 0) {
-      updatesList.innerHTML = '<p class="updates-loading">Unable to load updates.</p>';
-      updatesTimestamp.textContent = '';
-      return;
+// Set "Last updated" timestamp in Site Navigation heading
+const navTimestamp = document.getElementById('nav-timestamp');
+if (navTimestamp) {
+  fetchRecentCommits(1).then((commits) => {
+    if (commits && commits.length > 0) {
+      navTimestamp.textContent = `Last updated: ${fmtDate(commits[0].commit.committer.date)}`;
     }
-
-    updatesTimestamp.textContent = `Last updated: ${fmtDate(commits[0].commit.committer.date)}`;
-
-    updatesList.innerHTML = commits.map((c) => {
-      const msg = c.commit.message.split('\n')[0];
-      const dateStr = fmtShortDate(c.commit.committer.date);
-      return `<div class="updates-item"><span class="updates-dot"></span><span class="updates-msg">${escapeHtml(msg)}</span><span class="updates-date">${dateStr}</span></div>`;
-    }).join('');
   });
 }
 
