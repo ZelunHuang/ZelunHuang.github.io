@@ -105,8 +105,37 @@
         margin-bottom: 16px;
       }
 
-      #preview .cell {
-        background: rgba(255,255,255,0.5);
+      #preview .cell { background: transparent; }
+
+      .tetris-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+
+      .tetris-actions .btn-sm {
+        font-family: var(--font);
+        font-size: 0.82rem;
+        padding: 3px 12px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: var(--surface-alt);
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .tetris-actions .btn-sm:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      .speed-label {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 44px;
+        text-align: center;
       }
 
       .controls-hint {
@@ -208,6 +237,13 @@
                 <kbd>&uarr;</kbd> rotate &nbsp; <kbd>&darr;</kbd> drop<br />
                 <kbd>Space</kbd> hard drop
               </div>
+
+              <div class="tetris-actions">
+                <button class="btn-sm" id="btn-pause">Pause</button>
+                <button class="btn-sm" id="btn-speed-down">&minus;</button>
+                <span class="speed-label" id="speed-label">500ms</span>
+                <button class="btn-sm" id="btn-speed-up">+</button>
+              </div>
             </div>
           </div>
         </div>
@@ -224,8 +260,10 @@
     <script>
       (function () {
         const COLS = 10, ROWS = 20;
-        let board, score, lines, gameOver;
+        let board, score, lines, gameOver, paused;
         let current, next, dropTimer, dropInterval;
+        const SPEEDS = [100, 250, 500, 800];
+        let speedIdx = 2; // 500ms default
 
         const PIECES = {
           I: { cells: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]] },
@@ -344,7 +382,7 @@
         }
 
         function drop() {
-          if (gameOver) return;
+          if (gameOver || paused) return;
           if (!collides(board, current.cells, current.r + 1, current.c))
             current.r++;
           else lock();
@@ -352,11 +390,29 @@
         }
 
         function hardDrop() {
-          if (gameOver) return;
+          if (gameOver || paused) return;
           while (!collides(board, current.cells, current.r + 1, current.c))
             current.r++;
           lock();
           render();
+        }
+
+        function togglePause() {
+          if (gameOver) return;
+          paused = !paused;
+          document.getElementById('btn-pause').textContent = paused ? 'Resume' : 'Pause';
+          if (paused) { clearInterval(dropTimer); }
+          else { dropTimer = setInterval(() => drop(), dropInterval); }
+        }
+
+        function adjustSpeed(delta) {
+          speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, speedIdx + delta));
+          dropInterval = SPEEDS[speedIdx];
+          document.getElementById('speed-label').textContent = dropInterval + 'ms';
+          if (!paused && !gameOver) {
+            clearInterval(dropTimer);
+            dropTimer = setInterval(() => drop(), dropInterval);
+          }
         }
 
         function render() {
@@ -393,26 +449,28 @@
         function newGame() {
           overlay.classList.remove('show');
           board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-          score = 0; lines = 0; gameOver = false;
+          score = 0; lines = 0; gameOver = false; paused = false;
           scoreEl.textContent = '0';
           linesEl.textContent = '0';
+          document.getElementById('btn-pause').textContent = 'Pause';
           next = randomPiece();
           spawn();
           clearInterval(dropTimer);
-          dropInterval = Math.max(100, 800 - lines * 20);
+          dropInterval = SPEEDS[speedIdx];
           dropTimer = setInterval(() => drop(), dropInterval);
           render();
         }
 
         // Keyboard
         document.addEventListener('keydown', (e) => {
-          if (gameOver) return;
+          if (gameOver && e.key !== 'p' && e.key !== 'P') return;
           switch (e.key) {
-            case 'ArrowLeft':  e.preventDefault(); move(-1); break;
-            case 'ArrowRight': e.preventDefault(); move(1); break;
-            case 'ArrowUp':    e.preventDefault(); rotatePiece(); break;
-            case 'ArrowDown':  e.preventDefault(); drop(); break;
-            case ' ':          e.preventDefault(); hardDrop(); break;
+            case 'ArrowLeft':  if (!paused) { e.preventDefault(); move(-1); } break;
+            case 'ArrowRight': if (!paused) { e.preventDefault(); move(1); } break;
+            case 'ArrowUp':    if (!paused) { e.preventDefault(); rotatePiece(); } break;
+            case 'ArrowDown':  if (!paused) { e.preventDefault(); drop(); } break;
+            case ' ':          if (!paused) { e.preventDefault(); hardDrop(); } break;
+            case 'p': case 'P': e.preventDefault(); togglePause(); break;
           }
         });
 
@@ -441,6 +499,9 @@
 
         document.getElementById('btn-new').addEventListener('click', newGame);
         document.getElementById('btn-restart').addEventListener('click', newGame);
+        document.getElementById('btn-pause').addEventListener('click', togglePause);
+        document.getElementById('btn-speed-down').addEventListener('click', () => adjustSpeed(-1));
+        document.getElementById('btn-speed-up').addEventListener('click', () => adjustSpeed(1));
 
         newGame();
       })();
