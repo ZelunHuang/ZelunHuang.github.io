@@ -248,7 +248,7 @@
         }
 
         function togglePause() {
-          if (gameOver) return;
+          if (gameOver || !gameStarted) return;
           paused = !paused;
           document.getElementById('btn-pause').textContent = paused ? 'Resume' : 'Pause';
           if (paused) { clearInterval(dropTimer); }
@@ -259,7 +259,7 @@
           speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, speedIdx + delta));
           dropInterval = SPEEDS[speedIdx];
           document.getElementById('speed-label').textContent = 'Speed: ' + dropInterval + 'ms';
-          if (!paused && !gameOver) {
+          if (!paused && !gameOver && gameStarted) {
             clearInterval(dropTimer);
             dropTimer = setInterval(() => drop(), dropInterval);
           }

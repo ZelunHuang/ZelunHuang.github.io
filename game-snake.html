@@ -252,7 +252,7 @@
         function adjustSpeed(delta) {
           speedLevel = Math.max(0, Math.min(SPEEDS.length - 1, speedLevel + delta));
           document.getElementById('speed-label').textContent = 'Speed: ' + (speedLevel + 1);
-          if (!paused && !gameOver) {
+          if (!paused && !gameOver && gameStarted) {
             clearInterval(gameTimer);
             gameTimer = setInterval(tick, SPEEDS[speedLevel]);
           }
