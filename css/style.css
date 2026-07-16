@@ -378,6 +378,13 @@ a:hover {
   color: var(--muted);
 }
 
+.review-text.collapsed {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .review-toggle {
   display: inline-block;
   margin-top: 6px;

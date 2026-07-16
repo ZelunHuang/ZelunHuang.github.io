@@ -76,14 +76,10 @@ document.querySelectorAll('.site-footer .container').forEach((container) => {
     const btn = e.target.closest('.review-toggle');
     if (!btn) return;
 
-    const preview = btn.parentElement.querySelector('.review-preview');
-    const full = btn.parentElement.querySelector('.review-full');
-    if (!preview || !full) return;
+    const text = btn.parentElement.querySelector('.review-text');
+    if (!text) return;
 
-    const expanded = btn.dataset.expanded === 'true';
-    preview.style.display = expanded ? 'inline' : 'none';
-    full.style.display = expanded ? 'none' : 'inline';
-    btn.textContent = expanded ? 'Read more' : 'Show less';
-    btn.dataset.expanded = expanded ? 'false' : 'true';
+    const collapsed = text.classList.toggle('collapsed');
+    btn.textContent = collapsed ? 'Read more' : 'Show less';
   });
 })();
