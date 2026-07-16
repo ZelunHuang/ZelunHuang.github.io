@@ -72,10 +72,7 @@
         <div class="tetris-wrap">
           <div class="board-wrap">
             <div id="board"></div>
-            <div class="overlay" id="overlay">
-              <p id="overlay-msg">Game Over</p>
-              <button class="btn" id="btn-restart">Play again</button>
-            </div>
+            <div class="overlay" id="overlay"></div>
           </div>
 
           <div class="side">
@@ -115,7 +112,7 @@
     <script>
       (function () {
         const COLS = 10, ROWS = 20;
-        let board, score, lines, gameOver, paused;
+        let board, score, lines, gameOver, paused, gameStarted;
         let current, next, dropTimer, dropInterval;
         const SPEEDS = [800, 400, 200, 100];
         let speedIdx = 1;
@@ -136,7 +133,6 @@
         const scoreEl = document.getElementById('score');
         const linesEl = document.getElementById('lines');
         const overlay = document.getElementById('overlay');
-        const overlayMsg = document.getElementById('overlay-msg');
 
         for (let i = 0; i < ROWS * COLS; i++) {
           const c = document.createElement('div');
@@ -213,8 +209,9 @@
           renderPreview();
           if (collides(board, current.cells, current.r, current.c)) {
             gameOver = true;
-            overlayMsg.textContent = 'Game Over';
+            overlay.innerHTML = '<p style="font-size:1.1rem;font-weight:700;color:var(--text)">Game Over</p><button class="btn" id="btn-restart-o" style="margin-top:4px;font-family:var(--font);font-size:0.95rem;padding:10px 24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-alt);color:var(--text);cursor:pointer">Play again</button>';
             overlay.classList.add('show');
+            document.getElementById('btn-restart-o').addEventListener('click', newGame);
             clearInterval(dropTimer);
           }
         }
@@ -301,7 +298,7 @@
         function newGame() {
           overlay.classList.remove('show');
           board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
-          score = 0; lines = 0; gameOver = false; paused = false;
+          score = 0; lines = 0; gameOver = false; paused = false; gameStarted = false;
           scoreEl.textContent = '0';
           linesEl.textContent = '0';
           document.getElementById('btn-pause').textContent = 'Pause';
@@ -309,12 +306,25 @@
           spawn();
           clearInterval(dropTimer);
           dropInterval = SPEEDS[speedIdx];
-          dropTimer = setInterval(() => drop(), dropInterval);
           render();
+          showStartOverlay();
+        }
+
+        function showStartOverlay() {
+          overlay.innerHTML = '<p style="font-size:1.2rem">Tetris</p><p style="font-size:0.85rem;color:var(--muted);margin:0">Clear lines, stack pieces</p><button class="btn" id="btn-start" style="margin-top:4px;font-family:var(--font);font-size:0.95rem;padding:10px 24px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-alt);color:var(--text);cursor:pointer">Start</button>';
+          overlay.classList.add('show');
+          document.getElementById('btn-start').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+          gameStarted = true;
+          overlay.classList.remove('show');
+          clearInterval(dropTimer);
+          dropTimer = setInterval(() => drop(), dropInterval);
         }
 
         document.addEventListener('keydown', (e) => {
-          if (gameOver && e.key !== 'p' && e.key !== 'P') return;
+          if ((gameOver || !gameStarted) && e.key !== 'p' && e.key !== 'P') return;
           switch (e.key) {
             case 'ArrowLeft':  if (!paused) { e.preventDefault(); move(-1); } break;
             case 'ArrowRight': if (!paused) { e.preventDefault(); move(1); } break;
@@ -344,7 +354,6 @@
         }, { passive: true });
 
         document.getElementById('btn-new').addEventListener('click', newGame);
-        document.getElementById('btn-restart').addEventListener('click', newGame);
         document.getElementById('btn-pause').addEventListener('click', togglePause);
         document.getElementById('btn-speed-down').addEventListener('click', () => adjustSpeed(-1));
         document.getElementById('btn-speed-up').addEventListener('click', () => adjustSpeed(1));

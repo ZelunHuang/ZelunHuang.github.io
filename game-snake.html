@@ -70,10 +70,7 @@
 
           <div class="board-wrap">
             <canvas id="canvas"></canvas>
-            <div class="overlay" id="overlay">
-              <p id="overlay-msg">Game Over</p>
-              <button class="btn-lg" id="btn-restart">Play again</button>
-            </div>
+            <div class="overlay" id="overlay"></div>
           </div>
 
           <div class="snake-bottom">
@@ -81,7 +78,7 @@
               <button class="btn-sm" id="btn-pause">Pause</button>
               <div class="speed-group">
                 <button class="btn-sm" id="btn-speed-down">&minus;</button>
-                <span class="speed-label" id="speed-label">Speed: 5</span>
+                <span class="speed-label" id="speed-label">Speed: 3</span>
                 <button class="btn-sm" id="btn-speed-up">+</button>
               </div>
             </div>
@@ -108,13 +105,12 @@
         const scoreEl = document.getElementById('score');
         const bestEl = document.getElementById('best');
         const overlay = document.getElementById('overlay');
-        const overlayMsg = document.getElementById('overlay-msg');
 
         const GRID = 16; // 16x16 grid
         let W, H, cellSize;
-        let snake, food, dir, nextDir, score, best, gameOver, paused;
+        let snake, food, dir, nextDir, score, best, gameOver, paused, gameStarted;
         let animId, gameTimer;
-        let speedLevel = 2; // default
+        let speedLevel = 2; // default (Speed: 3)
 
         // 5 speed levels (interval in ms)
         const SPEEDS = [200, 150, 110, 80, 55];
@@ -144,10 +140,9 @@
         function newGame() {
           overlay.classList.remove('show');
           resize();
-          score = 0; gameOver = false; paused = false;
+          score = 0; gameOver = false; paused = false; gameStarted = false;
           scoreEl.textContent = '0';
           document.getElementById('btn-pause').textContent = 'Pause';
-          // start in center, going right
           const cx = Math.floor(GRID / 2);
           const cy = Math.floor(GRID / 2);
           snake = [{x: cx, y: cy}, {x: cx-1, y: cy}, {x: cx-2, y: cy}];
@@ -156,8 +151,21 @@
           spawnFood();
           loadBest();
           clearInterval(gameTimer);
-          gameTimer = setInterval(tick, SPEEDS[speedLevel]);
           draw();
+          showStartOverlay();
+        }
+
+        function showStartOverlay() {
+          overlay.innerHTML = '<p style="font-size:1.2rem">Snake</p><p style="font-size:0.85rem;color:var(--muted);margin:0">Use arrow keys to steer</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
+          overlay.classList.add('show');
+          document.getElementById('btn-start').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+          gameStarted = true;
+          overlay.classList.remove('show');
+          clearInterval(gameTimer);
+          gameTimer = setInterval(tick, SPEEDS[speedLevel]);
         }
 
         function loadBest() {
@@ -201,7 +209,6 @@
           gameOver = true;
           saveBest();
           clearInterval(gameTimer);
-          overlayMsg.textContent = 'Game Over  \u00b7  Score: ' + score;
           overlay.innerHTML = '<p>Game Over  \u00b7  Score: ' + score + '</p><button class="btn-lg" id="btn-restart-o">Play again</button>';
           overlay.classList.add('show');
           document.getElementById('btn-restart-o').addEventListener('click', newGame);
@@ -291,7 +298,6 @@
 
         // Wire buttons
         document.getElementById('btn-new').addEventListener('click', newGame);
-        document.getElementById('btn-restart').addEventListener('click', newGame);
         document.getElementById('btn-pause').addEventListener('click', togglePause);
         document.getElementById('btn-speed-down').addEventListener('click', () => adjustSpeed(-1));
         document.getElementById('btn-speed-up').addEventListener('click', () => adjustSpeed(1));
