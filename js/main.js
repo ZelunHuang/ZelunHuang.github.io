@@ -22,6 +22,38 @@ document.querySelectorAll('.dropdown').forEach((dd) => {
   });
 });
 
+// Footer: fetch last commit time from GitHub API
+const repoOwner = 'ZelunHuang';
+const repoName = 'ZelunHuang.github.io';
+const repoBranch = 'main';
+
+async function fetchLastPushTime() {
+  const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${repoBranch}`;
+  try {
+    const res = await fetch(apiUrl, { headers: { Accept: 'application/vnd.github+json' } });
+    if (!res.ok) throw new Error(String(res.status));
+    const data = await res.json();
+    const date = data?.commit?.committer?.date;
+    if (!date) throw new Error('Missing date');
+    const d = new Date(date);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return null;
+  }
+}
+
+document.querySelectorAll('.site-footer .container').forEach((container) => {
+  const stamp = document.createElement('p');
+  stamp.className = 'footer-timestamp';
+  stamp.textContent = 'Last updated: loading\u2026';
+  container.appendChild(stamp);
+
+  fetchLastPushTime().then((t) => {
+    stamp.textContent = t ? `Last updated: ${t}` : 'Last updated: unavailable';
+  });
+});
+
 // Reading list: search & review toggle
 (function () {
   const searchInput = document.getElementById('book-search');

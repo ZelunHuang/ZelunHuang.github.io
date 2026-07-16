@@ -471,6 +471,11 @@ a:hover {
   color: var(--accent);
 }
 
+.footer-timestamp {
+  margin-top: 4px;
+  font-size: 0.8rem;
+}
+
 /* ── Email link ── */
 
 .email-link {
