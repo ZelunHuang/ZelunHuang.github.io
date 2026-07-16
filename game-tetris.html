@@ -14,7 +14,7 @@
       .cell-I { background:#2da44e; } .cell-O { background:#f0c040; } .cell-T { background:#9b59b6; }
       .cell-S { background:#27ae60; } .cell-Z { background:#e74c3c; } .cell-L { background:#e67e22; } .cell-J { background:#3498db; }
 
-      .side { display:flex; flex-direction:column; gap:10px; min-width:120px; align-items:flex-start; }
+      .side { display:flex; flex-direction:column; gap:10px; min-width:120px; align-items:center; text-align:center; }
       .side .btn { font-family:var(--font); font-size:0.82rem; padding:4px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
       .side .btn:hover { border-color:var(--accent); color:var(--accent); }
       .side .stat { font-size:0.82rem; color:var(--muted); }
@@ -92,7 +92,7 @@
                 <button class="btn" id="btn-speed-down">&minus;</button>
                 <button class="btn" id="btn-speed-up">+</button>
               </div>
-              <div class="speed-val" id="speed-label">400ms</div>
+              <div class="speed-val" id="speed-label">Speed: 400ms</div>
             </div>
             <div class="hint">
               <kbd>&larr;</kbd> <kbd>&rarr;</kbd> move<br />
@@ -261,7 +261,7 @@
         function adjustSpeed(delta) {
           speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, speedIdx + delta));
           dropInterval = SPEEDS[speedIdx];
-          document.getElementById('speed-label').textContent = dropInterval + 'ms';
+          document.getElementById('speed-label').textContent = 'Speed: ' + dropInterval + 'ms';
           if (!paused && !gameOver) {
             clearInterval(dropTimer);
             dropTimer = setInterval(() => drop(), dropInterval);
