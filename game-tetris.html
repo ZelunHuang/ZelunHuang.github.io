@@ -14,7 +14,7 @@
       .cell-I { background:#2da44e; } .cell-O { background:#f0c040; } .cell-T { background:#9b59b6; }
       .cell-S { background:#27ae60; } .cell-Z { background:#e74c3c; } .cell-L { background:#e67e22; } .cell-J { background:#3498db; }
 
-      .side { display:flex; flex-direction:column; gap:10px; min-width:120px; }
+      .side { display:flex; flex-direction:column; gap:10px; min-width:120px; align-items:flex-start; }
       .side .btn { font-family:var(--font); font-size:0.82rem; padding:4px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
       .side .btn:hover { border-color:var(--accent); color:var(--accent); }
       .side .stat { font-size:0.82rem; color:var(--muted); }
@@ -95,8 +95,10 @@
               <div class="speed-val" id="speed-label">400ms</div>
             </div>
             <div class="hint">
-              <kbd>&larr;</kbd><kbd>&rarr;</kbd> move &nbsp; <kbd>&uarr;</kbd> rotate<br />
-              <kbd>&darr;</kbd> drop &nbsp; <kbd>Space</kbd> hard drop &nbsp; <kbd>P</kbd> pause
+              <kbd>&larr;</kbd> <kbd>&rarr;</kbd> move<br />
+              <kbd>&uarr;</kbd> rotate &nbsp; <kbd>&darr;</kbd> soft drop<br />
+              <kbd>Space</kbd> hard drop<br />
+              <kbd>P</kbd> pause / resume
             </div>
           </div>
         </div>
