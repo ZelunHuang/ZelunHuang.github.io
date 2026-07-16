@@ -105,14 +105,17 @@
         margin-bottom: 16px;
       }
 
-      #preview .cell { background: transparent; }
-
       .tetris-actions {
         display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
+        flex-direction: column;
+        gap: 6px;
         margin-top: 14px;
+      }
+
+      .tetris-actions-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       .tetris-actions .btn-sm {
@@ -131,11 +134,17 @@
         color: var(--accent);
       }
 
+      #speed-slider {
+        flex: 1;
+        max-width: 140px;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+
       .speed-label {
         font-size: 0.82rem;
         color: var(--muted);
         min-width: 44px;
-        text-align: center;
       }
 
       .controls-hint {
@@ -239,10 +248,14 @@
               </div>
 
               <div class="tetris-actions">
-                <button class="btn-sm" id="btn-pause">Pause</button>
-                <button class="btn-sm" id="btn-speed-down">&minus;</button>
-                <span class="speed-label" id="speed-label">500ms</span>
-                <button class="btn-sm" id="btn-speed-up">+</button>
+                <div class="tetris-actions-row">
+                  <button class="btn-sm" id="btn-pause">Pause</button>
+                </div>
+                <div class="tetris-actions-row">
+                  <label for="speed-slider" style="font-size:0.78rem;color:var(--muted)">Speed</label>
+                  <input type="range" id="speed-slider" min="0" max="4" step="1" value="1" />
+                  <span class="speed-label" id="speed-label">500ms</span>
+                </div>
               </div>
             </div>
           </div>
@@ -262,8 +275,8 @@
         const COLS = 10, ROWS = 20;
         let board, score, lines, gameOver, paused;
         let current, next, dropTimer, dropInterval;
-        const SPEEDS = [100, 250, 500, 800];
-        let speedIdx = 2; // 500ms default
+        const SPEEDS = [800, 500, 300, 150, 100];
+        let speedIdx = 1; // 500ms default
 
         const PIECES = {
           I: { cells: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]] },
@@ -405,8 +418,8 @@
           else { dropTimer = setInterval(() => drop(), dropInterval); }
         }
 
-        function adjustSpeed(delta) {
-          speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, speedIdx + delta));
+        function setSpeed(val) {
+          speedIdx = Math.max(0, Math.min(SPEEDS.length - 1, val));
           dropInterval = SPEEDS[speedIdx];
           document.getElementById('speed-label').textContent = dropInterval + 'ms';
           if (!paused && !gameOver) {
@@ -453,6 +466,7 @@
           scoreEl.textContent = '0';
           linesEl.textContent = '0';
           document.getElementById('btn-pause').textContent = 'Pause';
+          document.getElementById('speed-slider').value = speedIdx;
           next = randomPiece();
           spawn();
           clearInterval(dropTimer);
@@ -500,8 +514,7 @@
         document.getElementById('btn-new').addEventListener('click', newGame);
         document.getElementById('btn-restart').addEventListener('click', newGame);
         document.getElementById('btn-pause').addEventListener('click', togglePause);
-        document.getElementById('btn-speed-down').addEventListener('click', () => adjustSpeed(-1));
-        document.getElementById('btn-speed-up').addEventListener('click', () => adjustSpeed(1));
+        document.getElementById('speed-slider').addEventListener('input', (e) => setSpeed(parseInt(e.target.value)));
 
         newGame();
       })();
