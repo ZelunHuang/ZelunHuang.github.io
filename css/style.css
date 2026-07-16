@@ -327,7 +327,6 @@ a:hover {
   display: grid;
   grid-template-columns: 100px minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
 }
 
 .showcase-thumb {
@@ -349,6 +348,11 @@ a:hover {
   height: 100%;
   object-fit: cover;
   border-radius: var(--radius);
+}
+
+.showcase-desc {
+  display: flex;
+  flex-direction: column;
 }
 
 .showcase-desc p {
@@ -376,6 +380,7 @@ a:hover {
   font-size: 0.88rem;
   line-height: 1.6;
   color: var(--muted);
+  flex: 1;
 }
 
 .review-text.collapsed {
@@ -386,7 +391,7 @@ a:hover {
 }
 
 .review-toggle {
-  display: inline-block;
+  display: none;
   margin-top: 6px;
   padding: 2px 10px;
   border: 1px solid var(--border);
@@ -401,6 +406,10 @@ a:hover {
 .review-toggle:hover {
   background: var(--accent);
   color: #fff;
+}
+
+.review-toggle.visible {
+  display: inline-block;
 }
 
 .showcase-item.hidden {

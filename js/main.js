@@ -54,13 +54,27 @@ document.querySelectorAll('.site-footer .container').forEach((container) => {
   });
 });
 
-// Reading list: search & review toggle
+// Reading list: search & collapse/expand
 (function () {
   const searchInput = document.getElementById('book-search');
   const bookList = document.getElementById('book-list');
   if (!searchInput || !bookList) return;
 
   const items = bookList.querySelectorAll('.showcase-item');
+
+  // Measure and conditionally collapse each book
+  items.forEach((item) => {
+    const text = item.querySelector('.review-text');
+    const toggle = item.querySelector('.review-toggle');
+    const thumb = item.querySelector('.showcase-thumb');
+    if (!text || !toggle || !thumb) return;
+
+    // text starts uncollapsed (no collapsed class), measure full height
+    if (text.scrollHeight > thumb.offsetHeight) {
+      text.classList.add('collapsed');
+      toggle.classList.add('visible');
+    }
+  });
 
   searchInput.addEventListener('input', () => {
     const q = searchInput.value.trim().toLowerCase();
