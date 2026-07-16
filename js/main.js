@@ -27,32 +27,55 @@ const repoOwner = 'ZelunHuang';
 const repoName = 'ZelunHuang.github.io';
 const repoBranch = 'main';
 
-async function fetchLastPushTime() {
-  const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/commits/${repoBranch}`;
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function fmtDate(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fmtShortDate(iso) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+async function fetchRecentCommits(count) {
+  const url = `https://api.github.com/repos/${repoOwner}/${repoName}/commits?sha=${repoBranch}&per_page=${count}`;
   try {
-    const res = await fetch(apiUrl, { headers: { Accept: 'application/vnd.github+json' } });
+    const res = await fetch(url, { headers: { Accept: 'application/vnd.github+json' } });
     if (!res.ok) throw new Error(String(res.status));
-    const data = await res.json();
-    const date = data?.commit?.committer?.date;
-    if (!date) throw new Error('Missing date');
-    const d = new Date(date);
-    const pad = (n) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return await res.json();
   } catch {
     return null;
   }
 }
 
-document.querySelectorAll('.site-footer .container').forEach((container) => {
-  const stamp = document.createElement('p');
-  stamp.className = 'footer-timestamp';
-  stamp.textContent = 'Last updated: loading\u2026';
-  container.appendChild(stamp);
+// Render recent updates on the homepage
+const updatesList = document.getElementById('updates-list');
+const updatesTimestamp = document.getElementById('updates-timestamp');
+if (updatesList && updatesTimestamp) {
+  fetchRecentCommits(5).then((commits) => {
+    if (!commits || commits.length === 0) {
+      updatesList.innerHTML = '<p class="updates-loading">Unable to load updates.</p>';
+      updatesTimestamp.textContent = '';
+      return;
+    }
 
-  fetchLastPushTime().then((t) => {
-    stamp.textContent = t ? `Last updated: ${t}` : 'Last updated: unavailable';
+    updatesTimestamp.textContent = `Last updated: ${fmtDate(commits[0].commit.committer.date)}`;
+
+    updatesList.innerHTML = commits.map((c) => {
+      const msg = c.commit.message.split('\n')[0];
+      const dateStr = fmtShortDate(c.commit.committer.date);
+      return `<div class="updates-item"><span class="updates-dot"></span><span class="updates-msg">${escapeHtml(msg)}</span><span class="updates-date">${dateStr}</span></div>`;
+    }).join('');
   });
-});
+}
 
 // Reading list: search & collapse/expand
 (function () {
