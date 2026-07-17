@@ -37,6 +37,8 @@
       .overlay p { margin:0; font-size:1.1rem; font-weight:700; color:var(--text); }
       .overlay .btn { font-size:0.95rem; padding:10px 24px; font-family:var(--font); border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
       .overlay .btn:hover { border-color:var(--accent); color:var(--accent); }
+      .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
+      .rules-box strong { color:var(--text); }
 
       @media (max-width:500px) { .tetris-wrap { flex-direction:column; align-items:center; } .side { width:220px; flex-direction:row; flex-wrap:wrap; gap:8px; } .side-spacer { display:none; } #preview { width:60px; } }
     </style>
@@ -96,6 +98,11 @@
               <kbd>&uarr;</kbd> rotate &nbsp; <kbd>&darr;</kbd> soft drop<br />
               <kbd>Space</kbd> hard drop<br />
               <kbd>P</kbd> pause / resume
+            </div>
+
+            <div class="rules-box">
+              <strong>Rules</strong><br />
+              Arrange falling tetrominoes to form complete horizontal lines. A full line clears &mdash; the more lines cleared at once, the higher the score (100/300/500/800 pts). Game ends when blocks stack to the top. Speed control affects drop interval.
             </div>
           </div>
         </div>

@@ -118,6 +118,8 @@
         color: var(--muted);
         text-align: center;
       }
+      .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
+      .rules-box strong { color:var(--text); }
     </style>
   </head>
   <body>
@@ -164,6 +166,11 @@
           </div>
 
           <p class="hint">Use <strong>arrow keys</strong> or <strong>swipe</strong> to move tiles.</p>
+
+          <div class="rules-box">
+            <strong>Rules</strong><br />
+            Merge matching tiles by sliding them with arrow keys or swipe. Two tiles with the same number merge into one with their sum. Reach the <strong>2048</strong> tile to win! Game ends when the grid fills up with no merges left.
+          </div>
         </div>
       </section>
     </main>

@@ -29,6 +29,8 @@
       .overlay { position:absolute; inset:0; background:rgba(255,255,255,0.8); display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; border-radius:var(--radius); z-index:5; }
       .overlay.show { display:flex; }
       .overlay p { margin:0; font-size:1.1rem; font-weight:700; color:var(--text); }
+      .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
+      .rules-box strong { color:var(--text); }
     </style>
   </head>
   <body>
@@ -85,6 +87,11 @@
 
             <div class="hint">
               <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&larr;</kbd> <kbd>&rarr;</kbd> change direction &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
+            </div>
+
+            <div class="rules-box">
+              <strong>Rules</strong><br />
+              Control the snake to eat food and grow. Each piece of food adds <strong>1</strong> point. Don&rsquo;t hit the wall or your own tail. Speed can be adjusted &mdash; faster play means higher reaction score!
             </div>
           </div>
         </div>
