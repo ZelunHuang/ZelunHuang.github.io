@@ -3,24 +3,24 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Breakout - Zelun Huang</title>
+    <title>Basketball - Zelun Huang</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
-      .breakout-wrap { max-width:420px; margin:0 auto; user-select:none; -webkit-user-select:none; }
-      .breakout-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-      .breakout-info { display:flex; gap:16px; font-size:0.85rem; color:var(--muted); }
-      .breakout-info strong { color:var(--text); font-size:1rem; }
+      .bb-wrap { max-width:420px; margin:0 auto; user-select:none; -webkit-user-select:none; }
+      .bb-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+      .bb-info { display:flex; gap:16px; font-size:0.85rem; color:var(--muted); }
+      .bb-info strong { color:var(--text); font-size:1rem; }
       .btn-sm { font-family:var(--font); font-size:0.82rem; padding:3px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
       .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
       .btn-sm.active { border-color:var(--accent); color:var(--accent); background:var(--surface-alt); }
       .btn-lg { font-family:var(--font); font-size:0.95rem; padding:10px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
       .btn-lg:hover { border-color:var(--accent); color:var(--accent); }
 
-      .breakout-board-wrap { position:relative; width:100%; aspect-ratio:3/4; border:1px solid var(--border); border-radius:var(--radius); background:#1a1d23; }
-      #canvas { display:block; width:100%; height:100%; }
+      .bb-board-wrap { position:relative; width:100%; aspect-ratio:3/4; border:1px solid var(--border); border-radius:var(--radius); background:#1a1d23; }
+      #canvas { display:block; width:100%; height:100%; cursor:crosshair; }
 
-      .breakout-bottom { margin-top:10px; }
-      .breakout-actions { display:flex; align-items:center; gap:14px; }
+      .bb-bottom { margin-top:10px; }
+      .bb-actions { display:flex; align-items:center; gap:14px; }
 
       .hint { margin-top:8px; font-size:0.82rem; color:var(--muted); line-height:1.6; }
       .hint kbd { font-family:var(--font); padding:1px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem; background:var(--surface-alt); }
@@ -58,37 +58,37 @@
     <main class="page-shell">
       <section class="container">
         <div class="page-heading">
-          <h1>Breakout</h1>
-          <p>Break the bricks &mdash; with gravity.</p>
+          <h1>Basketball</h1>
+          <p>Shoot hoops &mdash; with gravity.</p>
         </div>
 
-        <div class="breakout-wrap">
-          <div class="breakout-top">
-            <div class="breakout-info">
+        <div class="bb-wrap">
+          <div class="bb-top">
+            <div class="bb-info">
               <span>Score: <strong id="score">0</strong></span>
-              <span>Lives: <strong id="lives">3</strong></span>
+              <span>Streak: <strong id="streak">0</strong></span>
               <span>Best: <strong id="best">0</strong></span>
             </div>
             <button class="btn-sm" id="btn-new">New Game</button>
           </div>
 
-          <div class="breakout-board-wrap">
+          <div class="bb-board-wrap">
             <canvas id="canvas"></canvas>
             <div class="overlay" id="overlay"></div>
           </div>
 
-          <div class="breakout-bottom">
-            <div class="breakout-actions">
+          <div class="bb-bottom">
+            <div class="bb-actions">
               <button class="btn-sm" id="btn-pause">Pause</button>
             </div>
 
             <div class="hint">
-              <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>mouse</kbd> move paddle &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
+              <kbd>Drag</kbd> from ball to aim (opposite direction) &nbsp;&middot;&nbsp; <kbd>Release</kbd> to shoot &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
             </div>
 
             <div class="rules-box">
               <strong>Rules</strong><br />
-              Break all the bricks using the ball. The ball is affected by <strong>gravity</strong> &mdash; it accelerates downward, creating parabolic arcs. Each brick colour is worth a different score (1&ndash;7 pts). You have <strong>3</strong> lives. Losing all lives or clearing all bricks ends the game.
+              Drag away from the hoop to set power &amp; angle &mdash; like a slingshot. Pull further = shoot harder. The ball follows a <strong>gravity</strong> arc. Each basket: <strong>+10 pts</strong>, consecutive baskets build a streak multiplier (&times;2, &times;3&hellip;). The hoop moves to a new random position after each attempt. Miss and you start over.
             </div>
           </div>
         </div>
@@ -107,37 +107,28 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const scoreEl = document.getElementById('score');
-        const livesEl = document.getElementById('lives');
+        const streakEl = document.getElementById('streak');
         const bestEl = document.getElementById('best');
         const overlay = document.getElementById('overlay');
 
         // ─── Constants ──────────────────────────────────────
-        const GRAVITY = 0.25;
-        const BOUNCE_ENERGY = 0.92;   // energy retained on wall/top bounces
-        const PADDLE_SPEED = 6;
-        const BALL_BASE_SPEED = 6;
-        const MAX_LIVES = 3;
-        const COLS = 8;
-        const ROWS = 6;
-        const BRICK_GAP = 3;
-
-        const BRICK_COLORS = [
-          '#e74c3c', // red     — 7 pts
-          '#e67e22', // orange  — 5 pts
-          '#f0c040', // yellow  — 3 pts
-          '#2da44e', // green   — 2 pts
-          '#3498db', // blue    — 2 pts
-          '#9b59b6', // purple  — 1 pt
-        ];
-        const BRICK_PTS = [7, 5, 3, 2, 2, 1];
+        const GRAVITY = 0.28;
+        const MAX_POWER = 14;
+        const POWER_SCALE = 0.08;
+        const BALL_RADIUS_RATIO = 0.022;
+        const COURT_FLOOR_RATIO = 0.88;
+        const HOOP_RIM_WIDTH = W => W / 16;
+        const HOOP_BACKBOARD_H = H => H / 7;
+        const BOUNCE = 0.5;
 
         // ─── State ──────────────────────────────────────────
         let W, H;
-        let paddle, ball, bricks;
-        let score, best, lives;
-        let gameState;   // 'idle' | 'playing' | 'paused' | 'won' | 'lost'
+        let ball, hoop;
+        let score, streak, best;
+        let gameState;   // 'idle' | 'ready' | 'aiming' | 'shooting' | 'paused' | 'won'
         let animId;
-        let keys = { left: false, right: false };
+        let dragStart, dragCurrent;
+        let aimVx, aimVy;
 
         // ─── Resize ─────────────────────────────────────────
 
@@ -153,45 +144,29 @@
           H = canvas.height;
         }
 
-        // ─── Physics objects ────────────────────────────────
-
-        function initPaddle() {
-          const pw = W / 6;
-          const ph = H / 48;
-          return { x: (W - pw) / 2, y: H - H / 14, w: pw, h: ph };
-        }
+        // ─── Ball ───────────────────────────────────────────
 
         function initBall() {
-          const r = W / 36;
+          const r = Math.max(6, W * BALL_RADIUS_RATIO);
           return {
-            x: W / 2, y: H * 0.78,
+            x: W / 2,
+            y: H * COURT_FLOOR_RATIO - r,
             vx: 0, vy: 0,
             r: r,
-            stuck: true,  // stuck to paddle until launch
           };
         }
 
-        function createBricks() {
-          const rows = [];
-          const gap = BRICK_GAP * (W / 420);
-          const bw = (W - gap * (COLS + 1)) / COLS;
-          const bh = H / 22;
+        // ─── Hoop ───────────────────────────────────────────
 
-          for (let r = 0; r < ROWS; r++) {
-            const row = [];
-            for (let c = 0; c < COLS; c++) {
-              row.push({
-                x: gap + c * (bw + gap),
-                y: H * 0.06 + r * (bh + gap),
-                w: bw, h: bh,
-                alive: true,
-                color: BRICK_COLORS[r],
-                pts: BRICK_PTS[r],
-              });
-            }
-            rows.push(row);
-          }
-          return rows;
+        function randomHoop() {
+          const rimW = HOOP_RIM_WIDTH(W);
+          // Random position in upper portion, avoiding edges
+          const margin = W * 0.12;
+          const x = margin + Math.random() * (W - margin * 2);
+          const y = H * 0.08 + Math.random() * (H * 0.45);
+          // Decide which side the backboard is on
+          const backboardSide = x < W / 2 ? 'right' : 'left';
+          return { x, y, rimW, backboardSide, scored: false };
         }
 
         // ─── Game Logic ─────────────────────────────────────
@@ -199,227 +174,370 @@
         function newGame() {
           overlay.classList.remove('show');
           resize();
-          paddle = initPaddle();
           ball = initBall();
-          bricks = createBricks();
-          score = 0; lives = MAX_LIVES;
+          hoop = randomHoop();
+          score = 0; streak = 0;
           gameState = 'idle';
           scoreEl.textContent = '0';
-          livesEl.textContent = lives;
+          streakEl.textContent = '0';
           document.getElementById('btn-pause').textContent = 'Pause';
           loadBest();
-          if (animId) cancelAnimationFrame(animId);
+          if (animId) { cancelAnimationFrame(animId); animId = null; }
           draw();
           showStartOverlay();
         }
 
         function loadBest() {
-          best = parseInt(localStorage.getItem('breakout-best') || '0');
+          best = parseInt(localStorage.getItem('basketball-best') || '0');
           bestEl.textContent = best;
         }
 
         function saveBest() {
-          if (score > best) { best = score; bestEl.textContent = best; localStorage.setItem('breakout-best', best); }
+          if (score > best) { best = score; bestEl.textContent = best; localStorage.setItem('basketball-best', best); }
         }
 
         function showStartOverlay() {
-          overlay.innerHTML = '<p style="font-size:1.2rem">Breakout</p><p style="font-size:0.85rem;color:#aaa;margin:0">Gravity-powered ball</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
+          overlay.innerHTML = '<p style="font-size:1.2rem">Basketball</p><p style="font-size:0.85rem;color:#aaa;margin:0">Drag to aim, release to shoot</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
           overlay.classList.add('show');
           document.getElementById('btn-start').addEventListener('click', startGame);
         }
 
         function startGame() {
           overlay.classList.remove('show');
-          gameState = 'playing';
-          // Launch ball
-          ball.stuck = true;  // wait for click/space to launch
+          gameState = 'ready';
+          ball = initBall();
+          hoop = randomHoop();
           if (!animId) loop();
         }
 
-        function launchBall() {
-          if (!ball.stuck) return;
-          ball.stuck = false;
-          ball.vx = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1.5 + 1.5);
-          ball.vy = -BALL_BASE_SPEED;
+        function readyNext() {
+          hoop = randomHoop();
+          ball = initBall();
+          gameState = 'ready';
+          draw();
         }
 
-        function loseLife() {
-          lives--;
-          livesEl.textContent = lives;
-          if (lives <= 0) {
-            gameState = 'lost';
-            saveBest();
-            overlay.innerHTML = '<p>Game Over</p><p class="sub">Score: ' + score + '</p><button class="btn-lg" id="btn-restart-o" style="margin-top:4px">Play again</button>';
-            overlay.classList.add('show');
-            document.getElementById('btn-restart-o').addEventListener('click', newGame);
-            return;
+        function scoreShot() {
+          const multiplier = Math.min(streak + 1, 10);
+          score += 10 * multiplier;
+          streak++;
+          scoreEl.textContent = score;
+          streakEl.textContent = streak;
+          saveBest();
+          // Brief celebration flash, then next round
+          setTimeout(() => { if (gameState !== 'paused') readyNext(); }, 400);
+        }
+
+        function missShot() {
+          streak = 0;
+          streakEl.textContent = '0';
+          // Allow ball to bounce/settle, then reset
+          setTimeout(() => {
+            if (gameState === 'shooting') readyNext();
+          }, 1200);
+        }
+
+        // ─── Aiming ─────────────────────────────────────────
+
+        function startAim(mx, my) {
+          if (gameState !== 'ready') return;
+          const dx = mx - ball.x;
+          const dy = my - ball.y;
+          // Only start aiming if clicking near the ball
+          if (dx * dx + dy * dy > (ball.r + 20) * (ball.r + 20)) return;
+          dragStart = { x: mx, y: my };
+          dragCurrent = { x: mx, y: my };
+          gameState = 'aiming';
+        }
+
+        function updateAim(mx, my) {
+          if (gameState !== 'aiming') return;
+          dragCurrent = { x: mx, y: my };
+          const dx = ball.x - dragCurrent.x;  // reverse: pull back = shoot forward
+          const dy = ball.y - dragCurrent.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxDist = W * 0.45;
+          const clamped = Math.min(dist, maxDist);
+          const factor = clamped / (dist || 1);
+          const speed = clamped * POWER_SCALE;
+          aimVx = dx * factor * POWER_SCALE;
+          aimVy = dy * factor * POWER_SCALE;
+          // Clamp speed
+          const spd = Math.sqrt(aimVx * aimVx + aimVy * aimVy);
+          if (spd > MAX_POWER) {
+            const s = MAX_POWER / spd;
+            aimVx *= s; aimVy *= s;
           }
-          // Reset ball to paddle
-          ball.x = paddle.x + paddle.w / 2;
-          ball.y = paddle.y - ball.r - 2;
-          ball.vx = 0; ball.vy = 0;
-          ball.stuck = true;
+          draw();
+          drawTrajectory(ball.x, ball.y, aimVx, aimVy, 60);
         }
 
-        function checkWin() {
-          for (const row of bricks)
-            for (const b of row)
-              if (b.alive) return false;
-          return true;
+        function releaseAim(mx, my) {
+          if (gameState !== 'aiming') return;
+          dragCurrent = { x: mx, y: my };
+          updateAim(mx, my);
+          // Launch
+          ball.vx = aimVx;
+          ball.vy = aimVy;
+          gameState = 'shooting';
+          draw();
         }
 
-        // ─── Physics Update ─────────────────────────────────
+        // ─── Physics ────────────────────────────────────────
 
         function update() {
-          if (gameState !== 'playing') return;
+          if (gameState !== 'shooting') return;
 
-          // Move paddle
-          const ps = PADDLE_SPEED * (W / 420);
-          if (keys.left) paddle.x = Math.max(0, paddle.x - ps);
-          if (keys.right) paddle.x = Math.min(W - paddle.w, paddle.x + ps);
-
-          // Ball stuck to paddle
-          if (ball.stuck) {
-            ball.x = paddle.x + paddle.w / 2;
-            ball.y = paddle.y - ball.r - 2;
-            return;
-          }
-
-          // Apply gravity
+          // Gravity
           ball.vy += GRAVITY;
 
-          // Move ball
+          // Move
           ball.x += ball.vx;
           ball.y += ball.vy;
 
-          // Left / right wall bounce
-          if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = -ball.vx * BOUNCE_ENERGY; }
-          if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -ball.vx * BOUNCE_ENERGY; }
+          // Wall bounces
+          if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = -ball.vx * BOUNCE; }
+          if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -ball.vx * BOUNCE; }
 
-          // Top wall bounce
-          if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = -ball.vy * BOUNCE_ENERGY; }
-
-          // Bottom — lose life
-          if (ball.y + ball.r > H) { loseLife(); if (gameState === 'playing') resetBallToPaddle(); return; }
-
-          // Paddle collision
-          if (ball.vy > 0 &&
-              ball.y + ball.r >= paddle.y &&
-              ball.y + ball.r <= paddle.y + paddle.h + 4 &&
-              ball.x >= paddle.x - ball.r &&
-              ball.x <= paddle.x + paddle.w + ball.r) {
-
-            const hitPos = (ball.x - paddle.x) / paddle.w; // 0..1
-            const angle = (hitPos - 0.5) * (Math.PI / 2.8); // ±~64°
-            const speed = Math.max(BALL_BASE_SPEED,
-              Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy) * 0.98 + 0.3);
-
-            ball.vx = Math.sin(angle) * speed;
-            ball.vy = -(Math.cos(angle) * speed);
-            ball.y = paddle.y - ball.r;
+          // Floor bounce + friction
+          if (ball.y + ball.r > H * COURT_FLOOR_RATIO) {
+            ball.y = H * COURT_FLOOR_RATIO - ball.r;
+            ball.vy = -ball.vy * BOUNCE;
+            ball.vx *= 0.85;
+            if (Math.abs(ball.vy) < 0.5) ball.vy = 0;
           }
 
-          // Brick collisions (AABB)
-          for (const row of bricks) {
-            for (const b of row) {
-              if (!b.alive) continue;
+          // Ceiling
+          if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = -ball.vy * BOUNCE; }
 
-              // Check overlap
-              const bx = ball.x, by = ball.y, br = ball.r;
-              const nearX = Math.max(b.x, Math.min(bx, b.x + b.w));
-              const nearY = Math.max(b.y, Math.min(by, b.y + b.h));
-              const dx = bx - nearX, dy = by - nearY;
-              const dist = Math.sqrt(dx * dx + dy * dy);
+          // Backboard bounce
+          const bbLeft = hoop.x - 4;
+          const bbRight = hoop.x + 4;
+          const bbTop = hoop.y - HOOP_BACKBOARD_H(H) / 2;
+          const bbBottom = hoop.y + HOOP_BACKBOARD_H(H) / 2;
+          if (ball.x + ball.r > bbLeft && ball.x - ball.r < bbRight &&
+              ball.y + ball.r > bbTop && ball.y - ball.r < bbBottom) {
+            if (ball.vx > 0 && hoop.backboardSide === 'right') {
+              ball.x = bbLeft - ball.r;
+              ball.vx = -ball.vx * BOUNCE;
+            } else if (ball.vx < 0 && hoop.backboardSide === 'left') {
+              ball.x = bbRight + ball.r;
+              ball.vx = -ball.vx * BOUNCE;
+            }
+          }
 
-              if (dist < br) {
-                b.alive = false;
-                score += b.pts;
-                scoreEl.textContent = score;
+          // Score detection: ball passes through hoop rim (from above)
+          if (!hoop.scored) {
+            const rimOpenLeft = hoop.backboardSide === 'right'
+              ? hoop.x - hoop.rimW : hoop.x;
+            const rimOpenRight = hoop.backboardSide === 'right'
+              ? hoop.x : hoop.x + hoop.rimW;
+            const rimY = hoop.y;
+            const tolerance = ball.r * 1.8;
 
-                // Determine bounce direction (push ball out along shortest axis)
-                const overlapX = br - Math.abs(dx);
-                const overlapY = br - Math.abs(dy);
-                if (overlapX < overlapY) {
-                  ball.vx = -ball.vx;
-                  ball.x += (dx > 0 ? overlapX : -overlapX);
-                } else {
-                  ball.vy = -ball.vy;
-                  ball.y += (dy > 0 ? overlapY : -overlapY);
-                }
+            if (ball.y > rimY - tolerance && ball.y < rimY + tolerance &&
+                ball.x > rimOpenLeft && ball.x < rimOpenRight &&
+                ball.vy > 0) {
+              hoop.scored = true;
+              scoreShot();
+              return;
+            }
+          }
 
-                if (checkWin()) {
-                  gameState = 'won';
-                  saveBest();
-                  overlay.innerHTML = '<p>You Win!</p><p class="sub">Score: ' + score + '</p><button class="btn-lg" id="btn-restart-o" style="margin-top:4px">Play again</button>';
-                  overlay.classList.add('show');
-                  document.getElementById('btn-restart-o').addEventListener('click', newGame);
-                  return;
-                }
-                break; // one brick per frame
-              }
+          // Out of bounds / settled: miss
+          if (ball.y > H + 50 || ball.x < -50 || ball.x > W + 50) {
+            missShot();
+            return;
+          }
+
+          // Ball settled on floor with almost no movement
+          if (ball.y >= H * COURT_FLOOR_RATIO - ball.r - 1 &&
+              Math.abs(ball.vy) < 0.3 && Math.abs(ball.vx) < 0.3 &&
+              gameState === 'shooting') {
+            // Check if already tried scoring and missed
+            if (!hoop.scored) {
+              missShot();
+              return;
             }
           }
         }
 
-        function resetBallToPaddle() {
-          ball.x = paddle.x + paddle.w / 2;
-          ball.y = paddle.y - ball.r - 2;
-          ball.vx = 0; ball.vy = 0;
-          ball.stuck = true;
-        }
+        // ─── Drawing ────────────────────────────────────────
 
-        // ─── Render ─────────────────────────────────────────
+        function drawTrajectory(sx, sy, vx, vy, steps) {
+          let x = sx, y = sy;
+          let cvx = vx, cvy = vy;
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          for (let i = 0; i < steps; i++) {
+            cvy += GRAVITY;
+            x += cvx;
+            y += cvy;
+            if (y > H * COURT_FLOOR_RATIO || x < 0 || x > W || y < 0) break;
+            if (i % 3 === 0) {
+              ctx.beginPath();
+              ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
 
         function draw() {
           ctx.clearRect(0, 0, W, H);
 
-          // Dark background
+          // Background
           ctx.fillStyle = '#1a1d23';
           ctx.fillRect(0, 0, W, H);
 
-          // Draw bricks
-          for (const row of bricks) {
-            for (const b of row) {
-              if (!b.alive) continue;
-              ctx.fillStyle = b.color;
-              ctx.beginPath();
-              ctx.roundRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2, 4);
-              ctx.fill();
-              // Subtle highlight
-              ctx.fillStyle = 'rgba(255,255,255,0.12)';
-              ctx.beginPath();
-              ctx.roundRect(b.x + 2, b.y + 2, b.w * 0.5, b.h * 0.35, 3);
-              ctx.fill();
+          // Court floor
+          ctx.fillStyle = '#22262e';
+          ctx.fillRect(0, H * COURT_FLOOR_RATIO, W, H * (1 - COURT_FLOOR_RATIO));
+          ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(0, H * COURT_FLOOR_RATIO);
+          ctx.lineTo(W, H * COURT_FLOOR_RATIO);
+          ctx.stroke();
+
+          // ─── Hoop ──────────────────────────────────────────
+          const rimY = hoop.y;
+          const rimW = hoop.rimW;
+          const bbH = HOOP_BACKBOARD_H(H);
+          const isRight = hoop.backboardSide === 'right';
+          const rimLeft = isRight ? hoop.x - rimW : hoop.x;
+          const rimRight = isRight ? hoop.x : hoop.x + rimW;
+          const bbLeft = isRight ? hoop.x - 5 : hoop.x - 5;
+          const bbRight = isRight ? hoop.x + 5 : hoop.x + 5;
+
+          // Backboard
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.fillRect(isRight ? hoop.x - 4 : hoop.x - 4,
+                       rimY - bbH / 2, 8, bbH);
+
+          // Backboard border
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(isRight ? hoop.x - 4 : hoop.x - 4,
+                         rimY - bbH / 2, 8, bbH);
+
+          // Rim line
+          ctx.strokeStyle = '#e74c3c';
+          ctx.lineWidth = Math.max(2.5, W / 120);
+          ctx.beginPath();
+          ctx.moveTo(rimLeft, rimY);
+          ctx.lineTo(rimRight, rimY);
+          ctx.stroke();
+
+          // Small rim connector to backboard
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(hoop.x, rimY - bbH / 2);
+          ctx.lineTo(hoop.x, rimY + bbH / 2);
+          ctx.stroke();
+
+          // Net (simple lines below rim)
+          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+          ctx.lineWidth = 1;
+          const netLen = Math.max(8, W / 25);
+          const segments = 5;
+          for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const nx = rimLeft + t * rimW;
+            const sway = Math.sin(t * Math.PI) * rimW * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(nx, rimY);
+            ctx.lineTo(nx + sway * 0.3, rimY + netLen);
+            ctx.stroke();
+          }
+          // Horizontal net lines
+          for (let j = 1; j <= 2; j++) {
+            const yy = rimY + netLen * j / 3;
+            ctx.beginPath();
+            for (let i = 0; i <= segments; i++) {
+              const t = i / segments;
+              const nx = rimLeft + t * rimW;
+              const sway = Math.sin(t * Math.PI) * rimW * 0.1 * (j / 3);
+              if (i === 0) ctx.moveTo(nx + sway * 0.3, yy);
+              else ctx.lineTo(nx + sway * 0.3, yy);
             }
+            ctx.stroke();
           }
 
-          // Draw paddle
-          ctx.fillStyle = '#ebede9';
+          // ─── Ball ──────────────────────────────────────────
+          // Basketball texture
+          const br = ball.r;
+          ctx.fillStyle = '#c86428';
           ctx.beginPath();
-          ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, Math.max(3, paddle.h / 3));
-          ctx.fill();
-          ctx.fillStyle = 'rgba(255,255,255,0.25)';
-          ctx.beginPath();
-          ctx.roundRect(paddle.x + 4, paddle.y + 3, paddle.w * 0.4, paddle.h * 0.4, 2);
+          ctx.arc(ball.x, ball.y, br, 0, Math.PI * 2);
           ctx.fill();
 
-          // Draw ball
-          ctx.fillStyle = '#ebede9';
+          // Basketball lines
+          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+          ctx.lineWidth = 1;
+          // Vertical line
           ctx.beginPath();
-          ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-          ctx.fill();
-          // Ball glow
-          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.moveTo(ball.x, ball.y - br);
+          ctx.lineTo(ball.x, ball.y + br);
+          ctx.stroke();
+          // Horizontal line
           ctx.beginPath();
-          ctx.arc(ball.x - ball.r * 0.3, ball.y - ball.r * 0.3, ball.r * 0.35, 0, Math.PI * 2);
+          ctx.moveTo(ball.x - br, ball.y);
+          ctx.lineTo(ball.x + br, ball.y);
+          ctx.stroke();
+          // Curve lines
+          ctx.beginPath();
+          ctx.arc(ball.x - br * 0.5, ball.y, br * 0.7, -Math.PI * 0.4, Math.PI * 0.4);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.arc(ball.x + br * 0.5, ball.y, br * 0.7, Math.PI * 0.6, Math.PI * 1.4);
+          ctx.stroke();
+
+          // Ball highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.beginPath();
+          ctx.arc(ball.x - br * 0.3, ball.y - br * 0.3, br * 0.35, 0, Math.PI * 2);
           ctx.fill();
 
-          if (ball.stuck && gameState === 'playing') {
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = Math.round(W / 26) + 'px "Times New Roman", Georgia, serif';
+          // ─── Aiming guide (when dragging) ──────────────────
+          if (gameState === 'aiming' && dragStart && dragCurrent) {
+            // Slingshot line
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(ball.x, ball.y);
+            ctx.lineTo(dragCurrent.x, dragCurrent.y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Power indicator
+            const dist = Math.sqrt(
+              (ball.x - dragCurrent.x) ** 2 + (ball.y - dragCurrent.y) ** 2);
+            const maxDist = W * 0.45;
+            const power = Math.min(dist / maxDist, 1);
+            const barW = W * 0.3;
+            const barH = 6;
+            const barX = (W - barW) / 2;
+            const barY = H * COURT_FLOOR_RATIO + 15;
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(barX, barY, barW, barH);
+            ctx.fillStyle = power > 0.7 ? '#e74c3c' : power > 0.4 ? '#f0c040' : '#2da44e';
+            ctx.fillRect(barX, barY, barW * power, barH);
+          }
+
+          // "Ready" indicator
+          if (gameState === 'ready') {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = Math.round(W / 30) + 'px "Times New Roman", Georgia, serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('Click or Space to launch', W / 2, H * 0.45);
+            ctx.fillText('Drag the ball to aim', W / 2, H * 0.35);
+          }
+
+          // Score flash on made shot
+          if (hoop.scored && gameState === 'shooting') {
+            ctx.fillStyle = 'rgba(45, 164, 78, 0.15)';
+            ctx.fillRect(0, 0, W, H);
           }
         }
 
@@ -434,9 +552,9 @@
         // ─── Controls ───────────────────────────────────────
 
         function togglePause() {
-          if (gameState === 'idle' || gameState === 'won' || gameState === 'lost') return;
+          if (gameState === 'idle' || gameState === 'won') return;
           if (gameState === 'paused') {
-            gameState = 'playing';
+            gameState = 'ready';
             document.getElementById('btn-pause').textContent = 'Pause';
           } else {
             gameState = 'paused';
@@ -444,55 +562,97 @@
           }
         }
 
-        // Keyboard
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); return; }
-          if (e.key === ' ') {
-            e.preventDefault();
-            if (gameState === 'playing' && ball.stuck) { launchBall(); return; }
-          }
-          if (e.key === 'ArrowLeft') { e.preventDefault(); keys.left = true; }
-          if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
-        });
-
-        document.addEventListener('keyup', (e) => {
-          if (e.key === 'ArrowLeft') keys.left = false;
-          if (e.key === 'ArrowRight') keys.right = false;
-        });
-
         // Mouse
-        canvas.addEventListener('mousemove', (e) => {
-          if (gameState !== 'playing' && gameState !== 'idle') return;
+        canvas.addEventListener('mousedown', (e) => {
           const rect = canvas.getBoundingClientRect();
-          const scale = W / (rect.width || 1);
-          const mx = (e.clientX - rect.left) * scale;
-          paddle.x = Math.max(0, Math.min(W - paddle.w, mx - paddle.w / 2));
-          if (ball.stuck) {
-            ball.x = paddle.x + paddle.w / 2;
-          }
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (e.clientX - rect.left) * scaleX;
+          const my = (e.clientY - rect.top) * scaleY;
+          startAim(mx, my);
         });
 
-        canvas.addEventListener('click', (e) => {
-          if (gameState === 'playing' && ball.stuck) launchBall();
+        canvas.addEventListener('mousemove', (e) => {
+          if (gameState !== 'aiming') return;
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (e.clientX - rect.left) * scaleX;
+          const my = (e.clientY - rect.top) * scaleY;
+          updateAim(mx, my);
+        });
+
+        canvas.addEventListener('mouseup', (e) => {
+          if (gameState !== 'aiming') return;
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (e.clientX - rect.left) * scaleX;
+          const my = (e.clientY - rect.top) * scaleY;
+          releaseAim(mx, my);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+          if (gameState === 'aiming') {
+            // Cancel aim
+            gameState = 'ready';
+            draw();
+          }
         });
 
         // Touch
-        canvas.addEventListener('touchmove', (e) => {
-          if (gameState !== 'playing' && gameState !== 'idle') return;
+        canvas.addEventListener('touchstart', (e) => {
           e.preventDefault();
           const t = e.touches[0];
           const rect = canvas.getBoundingClientRect();
-          const scale = W / (rect.width || 1);
-          const mx = (t.clientX - rect.left) * scale;
-          paddle.x = Math.max(0, Math.min(W - paddle.w, mx - paddle.w / 2));
-          if (ball.stuck) {
-            ball.x = paddle.x + paddle.w / 2;
-          }
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (t.clientX - rect.left) * scaleX;
+          const my = (t.clientY - rect.top) * scaleY;
+          startAim(mx, my);
         }, { passive: false });
 
-        canvas.addEventListener('touchstart', (e) => {
-          if (gameState === 'playing' && ball.stuck) launchBall();
+        canvas.addEventListener('touchmove', (e) => {
+          e.preventDefault();
+          if (gameState !== 'aiming') return;
+          const t = e.touches[0];
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (t.clientX - rect.left) * scaleX;
+          const my = (t.clientY - rect.top) * scaleY;
+          updateAim(mx, my);
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+          if (gameState !== 'aiming') return;
+          const t = e.changedTouches[0];
+          const rect = canvas.getBoundingClientRect();
+          const scaleX = W / (rect.width || 1);
+          const scaleY = H / (rect.height || 1);
+          const mx = (t.clientX - rect.left) * scaleX;
+          const my = (t.clientY - rect.top) * scaleY;
+          releaseAim(mx, my);
         }, { passive: true });
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); }
+          if (e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            if (gameState === 'ready') {
+              // Auto-shot with random-ish aim for keyboard users
+              // Launch with default angle/power
+              const dx = hoop.x - ball.x;
+              const dy = hoop.y - ball.y;
+              const angle = Math.atan2(dy, dx);
+              const speed = Math.min(MAX_POWER, Math.sqrt(dx*dx + dy*dy) * 0.06);
+              ball.vx = Math.cos(angle) * speed;
+              ball.vy = Math.sin(angle) * speed - 2; // arc up
+              gameState = 'shooting';
+            }
+          }
+        });
 
         // ─── Wire Buttons ──────────────────────────────────
 
