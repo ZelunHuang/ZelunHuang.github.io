@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sudoku - Zelun Huang</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .sd-wrap { max-width:420px; margin:0 auto; user-select:none; -webkit-user-select:none; }
+      .sd-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+      .sd-info { display:flex; gap:16px; font-size:0.85rem; color:var(--muted); }
+      .sd-info strong { color:var(--text); font-size:1rem; }
+      .btn-sm { font-family:var(--font); font-size:0.82rem; padding:3px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
+      .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+      .btn-sm.active { border-color:var(--accent); color:var(--accent); background:var(--surface-alt); }
+      .btn-lg { font-family:var(--font); font-size:0.95rem; padding:10px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
+      .btn-lg:hover { border-color:var(--accent); color:var(--accent); }
+
+      .board-wrap { position:relative; width:100%; aspect-ratio:1/1; border:1px solid var(--border); border-radius:var(--radius); background:#ebede9; }
+      #canvas { display:block; width:100%; height:100%; }
+
+      .sd-bottom { margin-top:10px; }
+      .sd-actions { display:flex; align-items:center; gap:14px; }
+      .mode-group { display:flex; align-items:center; gap:6px; }
+
+      .numpad { display:flex; gap:5px; justify-content:center; margin-top:10px; }
+      .numpad .num-btn { font-family:var(--font); font-size:1rem; width:36px; height:36px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+      .numpad .num-btn:hover { border-color:var(--accent); color:var(--accent); }
+      .numpad .num-btn.erase { font-size:0.7rem; width:44px; }
+
+      .hint { margin-top:8px; font-size:0.82rem; color:var(--muted); line-height:1.6; }
+      .hint kbd { font-family:var(--font); padding:1px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem; background:var(--surface-alt); }
+
+      .overlay { position:absolute; inset:0; background:rgba(255,255,255,0.8); display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; border-radius:var(--radius); z-index:5; }
+      .overlay.show { display:flex; }
+      .overlay p { margin:0; font-size:1.1rem; font-weight:700; color:var(--text); white-space:pre-line; text-align:center; }
+      .overlay .sub { font-size:0.85rem; font-weight:400; color:var(--muted); }
+
+      .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
+      .rules-box strong { color:var(--text); }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html">Zelun Huang</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="index.html">Home</a>
+          <div class="dropdown">
+            <span class="dropbtn">More ▾</span>
+            <div class="dropdown-menu">
+              <a href="profile.html">Profile</a>
+              <a href="projects.html">Projects</a>
+              <a href="hobbies.html">Hobbies</a>
+              <a href="https://github.com/ZelunHuang" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="social.html">Social Media</a>
+              <a class="active" href="fun-game.html">Fun Game</a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="container">
+        <div class="page-heading">
+          <h1>Sudoku</h1>
+          <p>Fill the grid &mdash; three difficulty levels.</p>
+        </div>
+
+        <div class="sd-wrap">
+          <div class="sd-top">
+            <div class="sd-info">
+              <span>Time: <strong id="timer">0</strong>s</span>
+              <span id="diff-label" style="font-size:0.82rem">Easy</span>
+            </div>
+            <button class="btn-sm" id="btn-new">New Game</button>
+          </div>
+
+          <div class="board-wrap">
+            <canvas id="canvas"></canvas>
+            <div class="overlay" id="overlay"></div>
+          </div>
+
+          <div class="sd-bottom">
+            <div class="sd-actions">
+              <button class="btn-sm" id="btn-pause">Pause</button>
+              <div class="mode-group">
+                <button class="btn-sm active" id="btn-easy">Easy</button>
+                <button class="btn-sm" id="btn-medium">Medium</button>
+                <button class="btn-sm" id="btn-hard">Hard</button>
+              </div>
+            </div>
+
+            <div class="numpad" id="numpad"></div>
+
+            <div class="hint">
+              <kbd>1-9</kbd> fill &nbsp;&middot;&nbsp; <kbd>&larr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> <kbd>&rarr;</kbd> navigate &nbsp;&middot;&nbsp; <kbd>Backspace</kbd> erase &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
+            </div>
+
+            <div class="rules-box">
+              <strong>Rules</strong><br />
+              Fill the 9&times;9 grid so each row, column, and 3&times;3 box contains digits 1&ndash;9 exactly once. Numbers you enter appear in <span style="color:#2da44e">green</span>;
+              pre-filled clues are dark gray. Invalid entries turn <span style="color:#c0392b">red</span>.<br />
+              <strong>Easy</strong>: ~30 blanks &middot; <strong>Medium</strong>: ~40 blanks &middot; <strong>Hard</strong>: ~48 blanks
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>&copy; <span id="year"></span> Zelun Huang</p>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+      (function () {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const timerEl = document.getElementById('timer');
+        const overlay = document.getElementById('overlay');
+
+        // ─── State ──────────────────────────────────────────
+        const DIFF = { easy: 30, medium: 40, hard: 48 };
+        let difficulty = 'easy';
+        let solution = [];   // complete solved board
+        let puzzle = [];     // board with blanks (0 = blank)
+        let player = [];     // current player entries (0 = blank)
+        let given = [];      // boolean mask: true = pre-filled clue
+        let W, H, cellSize;
+        let selR = 0, selC = 0;
+        let gameState;       // 'idle' | 'playing' | 'paused' | 'won'
+        let timerSec, timerInt;
+
+        // ─── Sudoku Engine ──────────────────────────────────
+
+        function shuffle(a) {
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        }
+
+        function findEmpty(b) {
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++)
+              if (b[r][c] === 0) return [r, c];
+          return null;
+        }
+
+        function isValid(b, r, c, n) {
+          for (let i = 0; i < 9; i++)
+            if (b[r][i] === n || b[i][c] === n) return false;
+          const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+          for (let dr = 0; dr < 3; dr++)
+            for (let dc = 0; dc < 3; dc++)
+              if (b[br + dr][bc + dc] === n) return false;
+          return true;
+        }
+
+        // Solve in-place with random picks; returns true if solvable
+        function solve(b) {
+          const e = findEmpty(b);
+          if (!e) return true;
+          const [r, c] = e;
+          const nums = shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+          for (const n of nums) {
+            if (isValid(b, r, c, n)) {
+              b[r][c] = n;
+              if (solve(b)) return true;
+              b[r][c] = 0;
+            }
+          }
+          return false;
+        }
+
+        // Count solutions up to limit; stops early
+        function countSolutions(b, limit) {
+          let cnt = 0;
+          function go() {
+            if (cnt >= limit) return;
+            const e = findEmpty(b);
+            if (!e) { cnt++; return; }
+            const [r, c] = e;
+            for (let n = 1; n <= 9; n++) {
+              if (isValid(b, r, c, n)) {
+                b[r][c] = n;
+                go();
+                b[r][c] = 0;
+                if (cnt >= limit) return;
+              }
+            }
+          }
+          go();
+          return cnt;
+        }
+
+        function generatePuzzle(blanks) {
+          // 1. Generate complete solved board
+          const sol = Array.from({ length: 9 }, () => Array(9).fill(0));
+          solve(sol);
+          solution = sol.map(r => [...r]);
+
+          // 2. Copy to puzzle, then remove cells
+          const puz = sol.map(r => [...r]);
+          const giv = Array.from({ length: 9 }, () => Array(9).fill(true));
+          const positions = shuffle(
+            Array.from({ length: 81 }, (_, i) => [Math.floor(i / 9), i % 9])
+          );
+
+          let removed = 0;
+          for (const [r, c] of positions) {
+            if (removed >= blanks) break;
+            const backup = puz[r][c];
+            puz[r][c] = 0;
+            giv[r][c] = false;
+            // Check unique solution; if it fails, restore
+            const test = puz.map(row => [...row]);
+            if (countSolutions(test, 2) === 1) {
+              removed++;
+            } else {
+              puz[r][c] = backup;
+              giv[r][c] = true;
+            }
+          }
+
+          puzzle = puz;
+          given = giv;
+        }
+
+        // ─── Canvas Setup ───────────────────────────────────
+
+        function resize() {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          const dpr = window.devicePixelRatio || 1;
+          const w = rect.width - 2;
+          canvas.width = Math.round(w * dpr);
+          canvas.height = Math.round(w * dpr);
+          canvas.style.width = w + 'px';
+          canvas.style.height = w + 'px';
+          W = canvas.width;
+          H = canvas.height;
+          cellSize = W / 9;
+        }
+
+        // ─── Drawing ────────────────────────────────────────
+
+        function draw() {
+          ctx.clearRect(0, 0, W, H);
+          const cs = cellSize;
+          const dpr = window.devicePixelRatio || 1;
+
+          // Background
+          ctx.fillStyle = '#f7f8f5';
+          ctx.fillRect(0, 0, W, H);
+
+          // Grid lines (fine)
+          ctx.strokeStyle = '#bbb';
+          ctx.lineWidth = 0.5;
+          for (let i = 0; i <= 9; i++) {
+            ctx.beginPath(); ctx.moveTo(i * cs, 0); ctx.lineTo(i * cs, H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, i * cs); ctx.lineTo(W, i * cs); ctx.stroke();
+          }
+
+          // 3x3 subgrid borders (thick)
+          ctx.strokeStyle = '#555';
+          ctx.lineWidth = Math.max(1.5, cs * 0.04);
+          for (let i = 0; i <= 3; i++) {
+            const p = i * 3 * cs;
+            ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(W, p); ctx.stroke();
+          }
+
+          // Selected cell highlight
+          if (gameState !== 'won') {
+            ctx.fillStyle = 'rgba(45, 164, 78, 0.12)';
+            ctx.fillRect(selC * cs, selR * cs, cs, cs);
+            ctx.strokeStyle = '#2da44e';
+            ctx.lineWidth = Math.max(2, cs * 0.06);
+            ctx.strokeRect(selC * cs, selR * cs, cs, cs);
+          }
+
+          // Same-row/col/box highlight
+          if (gameState !== 'won') {
+            ctx.fillStyle = 'rgba(45, 164, 78, 0.05)';
+            const br = Math.floor(selR / 3) * 3, bc = Math.floor(selC / 3) * 3;
+            for (let i = 0; i < 9; i++) {
+              if (i !== selC) ctx.fillRect(i * cs, selR * cs, cs, cs);
+              if (i !== selR) ctx.fillRect(selC * cs, i * cs, cs, cs);
+            }
+            for (let dr = 0; dr < 3; dr++)
+              for (let dc = 0; dc < 3; dc++) {
+                const rr = br + dr, cc = bc + dc;
+                if (rr !== selR && cc !== selC) ctx.fillRect(cc * cs, rr * cs, cs, cs);
+              }
+          }
+
+          // Numbers
+          const fontSize = Math.round(cs * 0.48);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+
+          for (let r = 0; r < 9; r++) {
+            for (let c = 0; c < 9; c++) {
+              const val = player[r][c] || puzzle[r][c];
+              if (!val) continue;
+
+              const x = c * cs + cs / 2;
+              const y = r * cs + cs / 2 + 1;
+
+              // Check if this entry conflicts
+              let conflict = false;
+              if (!given[r][c]) {
+                // Temporarily check conflict
+                const v = player[r][c];
+                // Check row
+                for (let cc = 0; cc < 9; cc++)
+                  if (cc !== c && (puzzle[r][cc] === v || player[r][cc] === v)) { conflict = true; break; }
+                if (!conflict) {
+                  for (let rr = 0; rr < 9; rr++)
+                    if (rr !== r && (puzzle[rr][c] === v || player[rr][c] === v)) { conflict = true; break; }
+                }
+                if (!conflict) {
+                  const br = Math.floor(r / 3) * 3, bc = Math.floor(c / 3) * 3;
+                  for (let dr = 0; dr < 3 && !conflict; dr++)
+                    for (let dc = 0; dc < 3; dc++) {
+                      const rr = br + dr, cc = bc + dc;
+                      if (rr !== r || cc !== c) {
+                        if (puzzle[rr][cc] === v || player[rr][cc] === v) { conflict = true; break; }
+                      }
+                    }
+                }
+              }
+
+              if (given[r][c]) {
+                // Pre-filled clue
+                ctx.fillStyle = '#333';
+                ctx.font = '600 ' + fontSize + 'px "Times New Roman", Georgia, serif';
+              } else if (conflict) {
+                // Error
+                ctx.fillStyle = '#c0392b';
+                // Red circle behind the number
+                ctx.fillStyle = 'rgba(192, 57, 43, 0.08)';
+                ctx.beginPath();
+                ctx.arc(x, y - 1, cs * 0.38, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#c0392b';
+                ctx.font = fontSize + 'px "Times New Roman", Georgia, serif';
+              } else {
+                // Player entry
+                ctx.fillStyle = '#2da44e';
+                ctx.font = fontSize + 'px "Times New Roman", Georgia, serif';
+              }
+
+              ctx.fillText(val, x, y);
+
+              // Pencil mark dots for selected empty cell with value in same region
+              if (!val && gameState !== 'won') {
+                // Show possible candidates as small dots (auto-pencil)
+              }
+            }
+          }
+
+          // Slight corner border correction (overdraw gap at subgrid intersections)
+          ctx.lineWidth = Math.max(2, cs * 0.06);
+          ctx.strokeStyle = '#555';
+          for (let i = 0; i <= 3; i++) {
+            const p = i * 3 * cs;
+            ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, p); ctx.lineTo(W, p); ctx.stroke();
+          }
+        }
+
+        // ─── Game Logic ─────────────────────────────────────
+
+        function startTimer() {
+          timerSec = 0;
+          timerEl.textContent = '0';
+          clearInterval(timerInt);
+          timerInt = setInterval(() => {
+            timerSec++;
+            timerEl.textContent = timerSec;
+          }, 1000);
+        }
+
+        function stopTimer() { clearInterval(timerInt); }
+
+        function showOverlay(title, sub) {
+          overlay.innerHTML = '<p>' + title + '</p><p class="sub">' + (sub || '') + '</p><button class="btn-lg" id="btn-restart-o" style="margin-top:4px">Play again</button>';
+          overlay.classList.add('show');
+          document.getElementById('btn-restart-o').addEventListener('click', newGame);
+        }
+
+        function showStartOverlay() {
+          const labels = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+          const blanks = DIFF[difficulty];
+          overlay.innerHTML = '<p style="font-size:1.2rem">Sudoku</p><p style="font-size:0.85rem;color:var(--muted);margin:0">' + labels[difficulty] + ' &middot; ' + blanks + ' blanks</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
+          overlay.classList.add('show');
+          document.getElementById('btn-start').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+          overlay.classList.remove('show');
+          gameState = 'playing';
+          startTimer();
+          draw();
+        }
+
+        function newGame() {
+          overlay.classList.remove('show');
+          stopTimer();
+          const blanks = DIFF[difficulty];
+          generatePuzzle(blanks);
+          player = Array.from({ length: 9 }, () => Array(9).fill(0));
+          selR = 0; selC = 0;
+          timerSec = 0;
+          gameState = 'idle';
+          timerEl.textContent = '0';
+          document.getElementById('btn-pause').textContent = 'Pause';
+          document.getElementById('diff-label').textContent =
+            ({ easy: 'Easy', medium: 'Medium', hard: 'Hard' })[difficulty];
+          resize();
+          draw();
+          showStartOverlay();
+        }
+
+        function checkWin() {
+          // All cells must be filled correctly
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++)
+              if (!puzzle[r][c] && !player[r][c]) return false;
+          // Verify against solution
+          for (let r = 0; r < 9; r++)
+            for (let c = 0; c < 9; c++) {
+              const v = puzzle[r][c] || player[r][c];
+              if (v !== solution[r][c]) return false;
+            }
+          return true;
+        }
+
+        function placeNumber(n) {
+          if (gameState !== 'playing') return;
+          if (puzzle[selR][selC] !== 0) return; // can't edit given
+
+          if (player[selR][selC] === n) {
+            player[selR][selC] = 0; // toggle off
+          } else {
+            player[selR][selC] = n;
+          }
+
+          draw();
+
+          if (checkWin()) {
+            gameState = 'won';
+            stopTimer();
+            const timeStr = timerSec + 's';
+            showOverlay('You Win!', 'Time: ' + timeStr);
+          }
+        }
+
+        function eraseCell() {
+          if (gameState !== 'playing') return;
+          if (puzzle[selR][selC] !== 0) return;
+          player[selR][selC] = 0;
+          draw();
+        }
+
+        function togglePause() {
+          if (gameState === 'won') return;
+          if (gameState === 'idle') return;
+          if (gameState === 'paused') {
+            gameState = 'playing';
+            document.getElementById('btn-pause').textContent = 'Pause';
+            startTimer();
+          } else {
+            gameState = 'paused';
+            document.getElementById('btn-pause').textContent = 'Resume';
+            stopTimer();
+          }
+        }
+
+        function moveSel(dr, dc) {
+          if (gameState === 'won') return;
+          selR = Math.max(0, Math.min(8, selR + dr));
+          selC = Math.max(0, Math.min(8, selC + dc));
+          draw();
+        }
+
+        function setDiff(d) {
+          if (gameState !== 'idle' && gameState !== 'won') return;
+          difficulty = d;
+          document.getElementById('btn-easy').classList.toggle('active', d === 'easy');
+          document.getElementById('btn-medium').classList.toggle('active', d === 'medium');
+          document.getElementById('btn-hard').classList.toggle('active', d === 'hard');
+          newGame();
+        }
+
+        // ─── Input Events ──────────────────────────────────
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); return; }
+          if (gameState !== 'playing') return;
+
+          const num = parseInt(e.key);
+          if (num >= 1 && num <= 9) { e.preventDefault(); placeNumber(num); return; }
+
+          if (e.key === 'Backspace' || e.key === 'Delete') { e.preventDefault(); eraseCell(); return; }
+
+          const dirs = {
+            ArrowUp:    [-1, 0],
+            ArrowDown:  [1, 0],
+            ArrowLeft:  [0, -1],
+            ArrowRight: [0, 1],
+          };
+          if (dirs[e.key]) { e.preventDefault(); moveSel(dirs[e.key][0], dirs[e.key][1]); }
+        });
+
+        // Mouse
+        canvas.addEventListener('mousedown', (e) => {
+          if (gameState === 'won') return;
+          const rect = canvas.getBoundingClientRect();
+          const scale = W / (rect.width || 1);
+          const mx = (e.clientX - rect.left) * scale;
+          const my = (e.clientY - rect.top) * scale;
+          const c = Math.floor(mx / cellSize);
+          const r = Math.floor(my / cellSize);
+          if (r >= 0 && r < 9 && c >= 0 && c < 9) {
+            selR = r; selC = c;
+            draw();
+          }
+        });
+
+        // Touch
+        let tx, ty;
+        canvas.addEventListener('touchstart', (e) => {
+          const t = e.touches[0];
+          tx = t.clientX; ty = t.clientY;
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+          if (tx == null) return;
+          const t = e.changedTouches[0];
+          const dx = t.clientX - tx, dy = t.clientY - ty;
+          if (Math.abs(dx) > 15 || Math.abs(dy) > 15) { tx = null; return; } // swipe, ignore
+          const rect = canvas.getBoundingClientRect();
+          const scale = W / (rect.width || 1);
+          const mx = (t.clientX - rect.left) * scale;
+          const my = (t.clientY - rect.top) * scale;
+          const c = Math.floor(mx / cellSize);
+          const r = Math.floor(my / cellSize);
+          if (r >= 0 && r < 9 && c >= 0 && c < 9) {
+            selR = r; selC = c;
+            draw();
+          }
+          tx = null;
+        }, { passive: true });
+
+        // ─── Build Numpad ──────────────────────────────────
+
+        const numpad = document.getElementById('numpad');
+        for (let n = 1; n <= 9; n++) {
+          const btn = document.createElement('button');
+          btn.className = 'num-btn';
+          btn.textContent = n;
+          btn.addEventListener('click', () => placeNumber(n));
+          numpad.appendChild(btn);
+        }
+        const eraseBtn = document.createElement('button');
+        eraseBtn.className = 'num-btn erase';
+        eraseBtn.textContent = 'Erase';
+        eraseBtn.addEventListener('click', eraseCell);
+        numpad.appendChild(eraseBtn);
+
+        // ─── Wire Buttons ──────────────────────────────────
+
+        document.getElementById('btn-new').addEventListener('click', newGame);
+        document.getElementById('btn-pause').addEventListener('click', togglePause);
+        document.getElementById('btn-easy').addEventListener('click', () => setDiff('easy'));
+        document.getElementById('btn-medium').addEventListener('click', () => setDiff('medium'));
+        document.getElementById('btn-hard').addEventListener('click', () => setDiff('hard'));
+
+        // ─── Init ──────────────────────────────────────────
+
+        newGame();
+      })();
+    </script>
+  </body>
+</html>
