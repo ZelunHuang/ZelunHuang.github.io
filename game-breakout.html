@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Breakout - Zelun Huang</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      .breakout-wrap { max-width:420px; margin:0 auto; user-select:none; -webkit-user-select:none; }
+      .breakout-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+      .breakout-info { display:flex; gap:16px; font-size:0.85rem; color:var(--muted); }
+      .breakout-info strong { color:var(--text); font-size:1rem; }
+      .btn-sm { font-family:var(--font); font-size:0.82rem; padding:3px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
+      .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+      .btn-sm.active { border-color:var(--accent); color:var(--accent); background:var(--surface-alt); }
+      .btn-lg { font-family:var(--font); font-size:0.95rem; padding:10px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
+      .btn-lg:hover { border-color:var(--accent); color:var(--accent); }
+
+      .breakout-board-wrap { position:relative; width:100%; aspect-ratio:3/4; border:1px solid var(--border); border-radius:var(--radius); background:#1a1d23; }
+      #canvas { display:block; width:100%; height:100%; }
+
+      .breakout-bottom { margin-top:10px; }
+      .breakout-actions { display:flex; align-items:center; gap:14px; }
+
+      .hint { margin-top:8px; font-size:0.82rem; color:var(--muted); line-height:1.6; }
+      .hint kbd { font-family:var(--font); padding:1px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem; background:var(--surface-alt); }
+
+      .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.72); display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; border-radius:var(--radius); z-index:5; }
+      .overlay.show { display:flex; }
+      .overlay p { margin:0; font-size:1.1rem; font-weight:700; color:#fff; white-space:pre-line; text-align:center; }
+      .overlay .sub { font-size:0.85rem; font-weight:400; color:#aaa; }
+
+      .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
+      .rules-box strong { color:var(--text); }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="index.html">Zelun Huang</a>
+        <nav class="site-nav" aria-label="Main navigation">
+          <a href="index.html">Home</a>
+          <div class="dropdown">
+            <span class="dropbtn">More ▾</span>
+            <div class="dropdown-menu">
+              <a href="profile.html">Profile</a>
+              <a href="projects.html">Projects</a>
+              <a href="hobbies.html">Hobbies</a>
+              <a href="https://github.com/ZelunHuang" target="_blank" rel="noreferrer">GitHub</a>
+              <a href="social.html">Social Media</a>
+              <a class="active" href="fun-game.html">Fun Game</a>
+            </div>
+          </div>
+        </nav>
+      </div>
+    </header>
+
+    <main class="page-shell">
+      <section class="container">
+        <div class="page-heading">
+          <h1>Breakout</h1>
+          <p>Break the bricks &mdash; with gravity.</p>
+        </div>
+
+        <div class="breakout-wrap">
+          <div class="breakout-top">
+            <div class="breakout-info">
+              <span>Score: <strong id="score">0</strong></span>
+              <span>Lives: <strong id="lives">3</strong></span>
+              <span>Best: <strong id="best">0</strong></span>
+            </div>
+            <button class="btn-sm" id="btn-new">New Game</button>
+          </div>
+
+          <div class="breakout-board-wrap">
+            <canvas id="canvas"></canvas>
+            <div class="overlay" id="overlay"></div>
+          </div>
+
+          <div class="breakout-bottom">
+            <div class="breakout-actions">
+              <button class="btn-sm" id="btn-pause">Pause</button>
+            </div>
+
+            <div class="hint">
+              <kbd>&larr;</kbd> <kbd>&rarr;</kbd> or <kbd>mouse</kbd> move paddle &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
+            </div>
+
+            <div class="rules-box">
+              <strong>Rules</strong><br />
+              Break all the bricks using the ball. The ball is affected by <strong>gravity</strong> &mdash; it accelerates downward, creating parabolic arcs. Each brick colour is worth a different score (1&ndash;7 pts). You have <strong>3</strong> lives. Losing all lives or clearing all bricks ends the game.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>&copy; <span id="year"></span> Zelun Huang</p>
+      </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+      (function () {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const livesEl = document.getElementById('lives');
+        const bestEl = document.getElementById('best');
+        const overlay = document.getElementById('overlay');
+
+        // ─── Constants ──────────────────────────────────────
+        const GRAVITY = 0.25;
+        const BOUNCE_ENERGY = 0.92;   // energy retained on wall/top bounces
+        const PADDLE_SPEED = 6;
+        const BALL_BASE_SPEED = 6;
+        const MAX_LIVES = 3;
+        const COLS = 8;
+        const ROWS = 6;
+        const BRICK_GAP = 3;
+
+        const BRICK_COLORS = [
+          '#e74c3c', // red     — 7 pts
+          '#e67e22', // orange  — 5 pts
+          '#f0c040', // yellow  — 3 pts
+          '#2da44e', // green   — 2 pts
+          '#3498db', // blue    — 2 pts
+          '#9b59b6', // purple  — 1 pt
+        ];
+        const BRICK_PTS = [7, 5, 3, 2, 2, 1];
+
+        // ─── State ──────────────────────────────────────────
+        let W, H;
+        let paddle, ball, bricks;
+        let score, best, lives;
+        let gameState;   // 'idle' | 'playing' | 'paused' | 'won' | 'lost'
+        let animId;
+        let keys = { left: false, right: false };
+
+        // ─── Resize ─────────────────────────────────────────
+
+        function resize() {
+          const rect = canvas.parentElement.getBoundingClientRect();
+          const dpr = window.devicePixelRatio || 1;
+          const w = rect.width - 2;
+          canvas.width = Math.round(w * dpr);
+          canvas.height = Math.round(w * dpr * (4/3));
+          canvas.style.width = w + 'px';
+          canvas.style.height = Math.round(w * 4/3) + 'px';
+          W = canvas.width;
+          H = canvas.height;
+        }
+
+        // ─── Physics objects ────────────────────────────────
+
+        function initPaddle() {
+          const pw = W / 6;
+          const ph = H / 48;
+          return { x: (W - pw) / 2, y: H - H / 14, w: pw, h: ph };
+        }
+
+        function initBall() {
+          const r = W / 36;
+          return {
+            x: W / 2, y: H * 0.78,
+            vx: 0, vy: 0,
+            r: r,
+            stuck: true,  // stuck to paddle until launch
+          };
+        }
+
+        function createBricks() {
+          const rows = [];
+          const gap = BRICK_GAP * (W / 420);
+          const bw = (W - gap * (COLS + 1)) / COLS;
+          const bh = H / 22;
+
+          for (let r = 0; r < ROWS; r++) {
+            const row = [];
+            for (let c = 0; c < COLS; c++) {
+              row.push({
+                x: gap + c * (bw + gap),
+                y: H * 0.06 + r * (bh + gap),
+                w: bw, h: bh,
+                alive: true,
+                color: BRICK_COLORS[r],
+                pts: BRICK_PTS[r],
+              });
+            }
+            rows.push(row);
+          }
+          return rows;
+        }
+
+        // ─── Game Logic ─────────────────────────────────────
+
+        function newGame() {
+          overlay.classList.remove('show');
+          resize();
+          paddle = initPaddle();
+          ball = initBall();
+          bricks = createBricks();
+          score = 0; lives = MAX_LIVES;
+          gameState = 'idle';
+          scoreEl.textContent = '0';
+          livesEl.textContent = lives;
+          document.getElementById('btn-pause').textContent = 'Pause';
+          loadBest();
+          if (animId) cancelAnimationFrame(animId);
+          draw();
+          showStartOverlay();
+        }
+
+        function loadBest() {
+          best = parseInt(localStorage.getItem('breakout-best') || '0');
+          bestEl.textContent = best;
+        }
+
+        function saveBest() {
+          if (score > best) { best = score; bestEl.textContent = best; localStorage.setItem('breakout-best', best); }
+        }
+
+        function showStartOverlay() {
+          overlay.innerHTML = '<p style="font-size:1.2rem">Breakout</p><p style="font-size:0.85rem;color:#aaa;margin:0">Gravity-powered ball</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
+          overlay.classList.add('show');
+          document.getElementById('btn-start').addEventListener('click', startGame);
+        }
+
+        function startGame() {
+          overlay.classList.remove('show');
+          gameState = 'playing';
+          // Launch ball
+          ball.stuck = true;  // wait for click/space to launch
+          if (!animId) loop();
+        }
+
+        function launchBall() {
+          if (!ball.stuck) return;
+          ball.stuck = false;
+          ball.vx = (Math.random() > 0.5 ? 1 : -1) * (Math.random() * 1.5 + 1.5);
+          ball.vy = -BALL_BASE_SPEED;
+        }
+
+        function loseLife() {
+          lives--;
+          livesEl.textContent = lives;
+          if (lives <= 0) {
+            gameState = 'lost';
+            saveBest();
+            overlay.innerHTML = '<p>Game Over</p><p class="sub">Score: ' + score + '</p><button class="btn-lg" id="btn-restart-o" style="margin-top:4px">Play again</button>';
+            overlay.classList.add('show');
+            document.getElementById('btn-restart-o').addEventListener('click', newGame);
+            return;
+          }
+          // Reset ball to paddle
+          ball.x = paddle.x + paddle.w / 2;
+          ball.y = paddle.y - ball.r - 2;
+          ball.vx = 0; ball.vy = 0;
+          ball.stuck = true;
+        }
+
+        function checkWin() {
+          for (const row of bricks)
+            for (const b of row)
+              if (b.alive) return false;
+          return true;
+        }
+
+        // ─── Physics Update ─────────────────────────────────
+
+        function update() {
+          if (gameState !== 'playing') return;
+
+          // Move paddle
+          const ps = PADDLE_SPEED * (W / 420);
+          if (keys.left) paddle.x = Math.max(0, paddle.x - ps);
+          if (keys.right) paddle.x = Math.min(W - paddle.w, paddle.x + ps);
+
+          // Ball stuck to paddle
+          if (ball.stuck) {
+            ball.x = paddle.x + paddle.w / 2;
+            ball.y = paddle.y - ball.r - 2;
+            return;
+          }
+
+          // Apply gravity
+          ball.vy += GRAVITY;
+
+          // Move ball
+          ball.x += ball.vx;
+          ball.y += ball.vy;
+
+          // Left / right wall bounce
+          if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = -ball.vx * BOUNCE_ENERGY; }
+          if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -ball.vx * BOUNCE_ENERGY; }
+
+          // Top wall bounce
+          if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = -ball.vy * BOUNCE_ENERGY; }
+
+          // Bottom — lose life
+          if (ball.y + ball.r > H) { loseLife(); if (gameState === 'playing') resetBallToPaddle(); return; }
+
+          // Paddle collision
+          if (ball.vy > 0 &&
+              ball.y + ball.r >= paddle.y &&
+              ball.y + ball.r <= paddle.y + paddle.h + 4 &&
+              ball.x >= paddle.x - ball.r &&
+              ball.x <= paddle.x + paddle.w + ball.r) {
+
+            const hitPos = (ball.x - paddle.x) / paddle.w; // 0..1
+            const angle = (hitPos - 0.5) * (Math.PI / 2.8); // ±~64°
+            const speed = Math.max(BALL_BASE_SPEED,
+              Math.sqrt(ball.vx * ball.vx + ball.vy * ball.vy) * 0.98 + 0.3);
+
+            ball.vx = Math.sin(angle) * speed;
+            ball.vy = -(Math.cos(angle) * speed);
+            ball.y = paddle.y - ball.r;
+          }
+
+          // Brick collisions (AABB)
+          for (const row of bricks) {
+            for (const b of row) {
+              if (!b.alive) continue;
+
+              // Check overlap
+              const bx = ball.x, by = ball.y, br = ball.r;
+              const nearX = Math.max(b.x, Math.min(bx, b.x + b.w));
+              const nearY = Math.max(b.y, Math.min(by, b.y + b.h));
+              const dx = bx - nearX, dy = by - nearY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+
+              if (dist < br) {
+                b.alive = false;
+                score += b.pts;
+                scoreEl.textContent = score;
+
+                // Determine bounce direction (push ball out along shortest axis)
+                const overlapX = br - Math.abs(dx);
+                const overlapY = br - Math.abs(dy);
+                if (overlapX < overlapY) {
+                  ball.vx = -ball.vx;
+                  ball.x += (dx > 0 ? overlapX : -overlapX);
+                } else {
+                  ball.vy = -ball.vy;
+                  ball.y += (dy > 0 ? overlapY : -overlapY);
+                }
+
+                if (checkWin()) {
+                  gameState = 'won';
+                  saveBest();
+                  overlay.innerHTML = '<p>You Win!</p><p class="sub">Score: ' + score + '</p><button class="btn-lg" id="btn-restart-o" style="margin-top:4px">Play again</button>';
+                  overlay.classList.add('show');
+                  document.getElementById('btn-restart-o').addEventListener('click', newGame);
+                  return;
+                }
+                break; // one brick per frame
+              }
+            }
+          }
+        }
+
+        function resetBallToPaddle() {
+          ball.x = paddle.x + paddle.w / 2;
+          ball.y = paddle.y - ball.r - 2;
+          ball.vx = 0; ball.vy = 0;
+          ball.stuck = true;
+        }
+
+        // ─── Render ─────────────────────────────────────────
+
+        function draw() {
+          ctx.clearRect(0, 0, W, H);
+
+          // Dark background
+          ctx.fillStyle = '#1a1d23';
+          ctx.fillRect(0, 0, W, H);
+
+          // Draw bricks
+          for (const row of bricks) {
+            for (const b of row) {
+              if (!b.alive) continue;
+              ctx.fillStyle = b.color;
+              ctx.beginPath();
+              ctx.roundRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2, 4);
+              ctx.fill();
+              // Subtle highlight
+              ctx.fillStyle = 'rgba(255,255,255,0.12)';
+              ctx.beginPath();
+              ctx.roundRect(b.x + 2, b.y + 2, b.w * 0.5, b.h * 0.35, 3);
+              ctx.fill();
+            }
+          }
+
+          // Draw paddle
+          ctx.fillStyle = '#ebede9';
+          ctx.beginPath();
+          ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, Math.max(3, paddle.h / 3));
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.beginPath();
+          ctx.roundRect(paddle.x + 4, paddle.y + 3, paddle.w * 0.4, paddle.h * 0.4, 2);
+          ctx.fill();
+
+          // Draw ball
+          ctx.fillStyle = '#ebede9';
+          ctx.beginPath();
+          ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+          ctx.fill();
+          // Ball glow
+          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          ctx.beginPath();
+          ctx.arc(ball.x - ball.r * 0.3, ball.y - ball.r * 0.3, ball.r * 0.35, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (ball.stuck && gameState === 'playing') {
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = Math.round(W / 26) + 'px "Times New Roman", Georgia, serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Click or Space to launch', W / 2, H * 0.45);
+          }
+        }
+
+        // ─── Game loop ─────────────────────────────────────
+
+        function loop() {
+          update();
+          draw();
+          animId = requestAnimationFrame(loop);
+        }
+
+        // ─── Controls ───────────────────────────────────────
+
+        function togglePause() {
+          if (gameState === 'idle' || gameState === 'won' || gameState === 'lost') return;
+          if (gameState === 'paused') {
+            gameState = 'playing';
+            document.getElementById('btn-pause').textContent = 'Pause';
+          } else {
+            gameState = 'paused';
+            document.getElementById('btn-pause').textContent = 'Resume';
+          }
+        }
+
+        // Keyboard
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); return; }
+          if (e.key === ' ') {
+            e.preventDefault();
+            if (gameState === 'playing' && ball.stuck) { launchBall(); return; }
+          }
+          if (e.key === 'ArrowLeft') { e.preventDefault(); keys.left = true; }
+          if (e.key === 'ArrowRight') { e.preventDefault(); keys.right = true; }
+        });
+
+        document.addEventListener('keyup', (e) => {
+          if (e.key === 'ArrowLeft') keys.left = false;
+          if (e.key === 'ArrowRight') keys.right = false;
+        });
+
+        // Mouse
+        canvas.addEventListener('mousemove', (e) => {
+          if (gameState !== 'playing' && gameState !== 'idle') return;
+          const rect = canvas.getBoundingClientRect();
+          const scale = W / (rect.width || 1);
+          const mx = (e.clientX - rect.left) * scale;
+          paddle.x = Math.max(0, Math.min(W - paddle.w, mx - paddle.w / 2));
+          if (ball.stuck) {
+            ball.x = paddle.x + paddle.w / 2;
+          }
+        });
+
+        canvas.addEventListener('click', (e) => {
+          if (gameState === 'playing' && ball.stuck) launchBall();
+        });
+
+        // Touch
+        canvas.addEventListener('touchmove', (e) => {
+          if (gameState !== 'playing' && gameState !== 'idle') return;
+          e.preventDefault();
+          const t = e.touches[0];
+          const rect = canvas.getBoundingClientRect();
+          const scale = W / (rect.width || 1);
+          const mx = (t.clientX - rect.left) * scale;
+          paddle.x = Math.max(0, Math.min(W - paddle.w, mx - paddle.w / 2));
+          if (ball.stuck) {
+            ball.x = paddle.x + paddle.w / 2;
+          }
+        }, { passive: false });
+
+        canvas.addEventListener('touchstart', (e) => {
+          if (gameState === 'playing' && ball.stuck) launchBall();
+        }, { passive: true });
+
+        // ─── Wire Buttons ──────────────────────────────────
+
+        document.getElementById('btn-new').addEventListener('click', newGame);
+        document.getElementById('btn-pause').addEventListener('click', togglePause);
+
+        // ─── Polyfill ──────────────────────────────────────
+
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+          CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (r > w/2) r = w/2; if (r > h/2) r = h/2;
+            this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r);
+            this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r);
+          };
+        }
+
+        // ─── Init ──────────────────────────────────────────
+
+        newGame();
+      })();
+    </script>
+  </body>
+</html>
