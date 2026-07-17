@@ -6,32 +6,32 @@
     <title>Basketball - Zelun Huang</title>
     <link rel="stylesheet" href="css/style.css" />
     <style>
-      .bb-wrap { max-width:420px; margin:0 auto; user-select:none; -webkit-user-select:none; }
-      .bb-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
-      .bb-info { display:flex; gap:16px; font-size:0.85rem; color:var(--muted); }
-      .bb-info strong { color:var(--text); font-size:1rem; }
-      .btn-sm { font-family:var(--font); font-size:0.82rem; padding:3px 12px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
-      .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
-      .btn-sm.active { border-color:var(--accent); color:var(--accent); background:var(--surface-alt); }
-      .btn-lg { font-family:var(--font); font-size:0.95rem; padding:10px 24px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
-      .btn-lg:hover { border-color:var(--accent); color:var(--accent); }
+      .bb-wrap { display:flex; justify-content:center; gap:18px; align-items:flex-start; user-select:none; -webkit-user-select:none; }
 
-      .bb-board-wrap { position:relative; width:100%; aspect-ratio:3/4; border:1px solid var(--border); border-radius:var(--radius); background:#1a1d23; }
-      #canvas { display:block; width:100%; height:100%; cursor:crosshair; }
+      .bb-board-wrap { flex:0 0 auto; border:1px solid var(--border); border-radius:var(--radius); background:#1a1d23; width:240px; position:relative; }
+      #canvas { display:block; width:100%; aspect-ratio:3/4; cursor:crosshair; }
 
-      .bb-bottom { margin-top:10px; }
-      .bb-actions { display:flex; align-items:center; gap:14px; }
+      .bb-side { display:flex; flex-direction:column; gap:10px; min-width:120px; align-items:center; text-align:center; }
+      .bb-side .btn { font-family:var(--font); font-size:0.82rem; padding:4px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:var(--text); cursor:pointer; }
+      .bb-side .btn:hover { border-color:var(--accent); color:var(--accent); }
+      .bb-side .stat { font-size:0.82rem; color:var(--muted); }
+      .bb-side .stat strong { color:var(--text); font-size:0.95rem; }
+      .bb-side .side-spacer { flex:1; min-height:8px; }
 
-      .hint { margin-top:8px; font-size:0.82rem; color:var(--muted); line-height:1.6; }
-      .hint kbd { font-family:var(--font); padding:1px 6px; border:1px solid var(--border); border-radius:3px; font-size:0.78rem; background:var(--surface-alt); }
+      .bb-side .hint { font-size:0.78rem; color:var(--muted); line-height:1.5; }
+      .bb-side .hint kbd { font-family:var(--font); padding:1px 5px; border:1px solid var(--border); border-radius:3px; font-size:0.75rem; background:var(--surface-alt); }
 
       .overlay { position:absolute; inset:0; background:rgba(0,0,0,0.72); display:none; align-items:center; justify-content:center; flex-direction:column; gap:12px; border-radius:var(--radius); z-index:5; }
       .overlay.show { display:flex; }
       .overlay p { margin:0; font-size:1.1rem; font-weight:700; color:#fff; white-space:pre-line; text-align:center; }
       .overlay .sub { font-size:0.85rem; font-weight:400; color:#aaa; }
+      .overlay .btn { font-size:0.95rem; padding:10px 24px; font-family:var(--font); border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); color:#fff; cursor:pointer; }
+      .overlay .btn:hover { border-color:var(--accent); color:var(--accent); }
 
       .rules-box { margin-top:14px; padding:12px 14px; border:1px solid var(--border); border-radius:var(--radius); background:var(--surface-alt); font-size:0.82rem; color:var(--muted); line-height:1.7; }
       .rules-box strong { color:var(--text); }
+
+      @media (max-width:550px) { .bb-wrap { flex-direction:column; align-items:center; } .bb-side { width:240px; flex-direction:row; flex-wrap:wrap; gap:8px; } .bb-side .side-spacer { display:none; } .bb-side .hint { width:100%; } }
     </style>
   </head>
   <body>
@@ -63,34 +63,31 @@
         </div>
 
         <div class="bb-wrap">
-          <div class="bb-top">
-            <div class="bb-info">
-              <span>Score: <strong id="score">0</strong></span>
-              <span>Streak: <strong id="streak">0</strong></span>
-              <span>Best: <strong id="best">0</strong></span>
-            </div>
-            <button class="btn-sm" id="btn-new">New Game</button>
-          </div>
-
           <div class="bb-board-wrap">
             <canvas id="canvas"></canvas>
             <div class="overlay" id="overlay"></div>
           </div>
 
-          <div class="bb-bottom">
-            <div class="bb-actions">
-              <button class="btn-sm" id="btn-pause">Pause</button>
-            </div>
+          <div class="bb-side">
+            <button class="btn" id="btn-new">New Game</button>
+            <div class="stat">Score: <strong id="score">0</strong></div>
+            <div class="stat">Streak: <strong id="streak">0</strong></div>
+            <div class="stat">Best: <strong id="best">0</strong></div>
 
+            <div class="side-spacer"></div>
+
+            <button class="btn" id="btn-pause">Pause</button>
             <div class="hint">
-              <kbd>Drag</kbd> from ball to aim (opposite direction) &nbsp;&middot;&nbsp; <kbd>Release</kbd> to shoot &nbsp;&middot;&nbsp; <kbd>P</kbd> pause
-            </div>
-
-            <div class="rules-box">
-              <strong>Rules</strong><br />
-              Drag away from the hoop to set power &amp; angle &mdash; like a slingshot. Pull further = shoot harder. The ball follows a <strong>gravity</strong> arc. Each basket: <strong>+10 pts</strong>, consecutive baskets build a streak multiplier (&times;2, &times;3&hellip;). The hoop moves to a new random position after each attempt. Miss and you start over.
+              <kbd>Drag</kbd> ball to aim<br />
+              <kbd>Release</kbd> to shoot<br />
+              <kbd>P</kbd> pause
             </div>
           </div>
+        </div>
+
+        <div class="rules-box">
+          <strong>Rules</strong><br />
+          Drag the ball like a slingshot &mdash; pull further/harder = shoot stronger. The ball follows a <strong>gravity</strong> arc. Each basket: <strong>+10 pts &times; streak</strong> (max &times;10). The hoop moves after each attempt.
         </div>
       </section>
     </main>
@@ -113,33 +110,29 @@
 
         // ─── Constants ──────────────────────────────────────
         const GRAVITY = 0.28;
-        const MAX_POWER = 14;
-        const POWER_SCALE = 0.08;
+        const POWER_SCALE = 0.14;
+        const MAX_POWER = 22;
         const BALL_RADIUS_RATIO = 0.022;
         const COURT_FLOOR_RATIO = 0.88;
-        const HOOP_RIM_WIDTH = W => W / 16;
-        const HOOP_BACKBOARD_H = H => H / 7;
+        const HOOP_RIM_W_RATIO = 0.065;
         const BOUNCE = 0.5;
 
         // ─── State ──────────────────────────────────────────
-        let W, H;
+        let W, H, dpr;
         let ball, hoop;
         let score, streak, best;
-        let gameState;   // 'idle' | 'ready' | 'aiming' | 'shooting' | 'paused' | 'won'
+        let gameState;   // 'idle' | 'ready' | 'aiming' | 'shooting' | 'paused'
         let animId;
-        let dragStart, dragCurrent;
-        let aimVx, aimVy;
+        let aimCssX, aimCssY, isAiming;
 
         // ─── Resize ─────────────────────────────────────────
 
         function resize() {
-          const rect = canvas.parentElement.getBoundingClientRect();
-          const dpr = window.devicePixelRatio || 1;
-          const w = rect.width - 2;
+          const rect = canvas.getBoundingClientRect();
+          dpr = window.devicePixelRatio || 1;
+          const w = rect.width;
           canvas.width = Math.round(w * dpr);
-          canvas.height = Math.round(w * dpr * (4/3));
-          canvas.style.width = w + 'px';
-          canvas.style.height = Math.round(w * 4/3) + 'px';
+          canvas.height = Math.round(w * 3/4 * dpr);
           W = canvas.width;
           H = canvas.height;
         }
@@ -156,17 +149,33 @@
           };
         }
 
-        // ─── Hoop ───────────────────────────────────────────
+        // ─── Hoop (sides only) ──────────────────────────────
 
         function randomHoop() {
-          const rimW = HOOP_RIM_WIDTH(W);
-          // Random position in upper portion, avoiding edges
-          const margin = W * 0.12;
-          const x = margin + Math.random() * (W - margin * 2);
-          const y = H * 0.08 + Math.random() * (H * 0.45);
-          // Decide which side the backboard is on
-          const backboardSide = x < W / 2 ? 'right' : 'left';
-          return { x, y, rimW, backboardSide, scored: false };
+          const rimW = W * HOOP_RIM_W_RATIO;
+          const margin = W * 0.04;
+          const zoneW = W * 0.20;
+          const side = Math.random() > 0.5 ? 'left' : 'right';
+          const x = side === 'left'
+            ? margin + Math.random() * zoneW
+            : W - margin - Math.random() * zoneW;
+          const y = H * 0.08 + Math.random() * (H * 0.38);
+          return { x, y, rimW, backboardSide: side, scored: false };
+        }
+
+        // ─── CSS <-> Canvas coordinate helpers ──────────────
+
+        function cssToCanvas(cssX, cssY) {
+          const rect = canvas.getBoundingClientRect();
+          return {
+            x: cssX * dpr,
+            y: cssY * dpr,
+          };
+        }
+
+        function getCssPos(clientX, clientY) {
+          const rect = canvas.getBoundingClientRect();
+          return { x: clientX - rect.left, y: clientY - rect.top };
         }
 
         // ─── Game Logic ─────────────────────────────────────
@@ -181,6 +190,7 @@
           scoreEl.textContent = '0';
           streakEl.textContent = '0';
           document.getElementById('btn-pause').textContent = 'Pause';
+          isAiming = false;
           loadBest();
           if (animId) { cancelAnimationFrame(animId); animId = null; }
           draw();
@@ -197,7 +207,7 @@
         }
 
         function showStartOverlay() {
-          overlay.innerHTML = '<p style="font-size:1.2rem">Basketball</p><p style="font-size:0.85rem;color:#aaa;margin:0">Drag to aim, release to shoot</p><button class="btn-lg" id="btn-start" style="margin-top:4px">Start</button>';
+          overlay.innerHTML = '<p style="font-size:1.2rem">Basketball</p><p style="font-size:0.85rem;color:#aaa;margin:0">Drag the ball to aim</p><button class="btn" id="btn-start" style="margin-top:4px">Start</button>';
           overlay.classList.add('show');
           document.getElementById('btn-start').addEventListener('click', startGame);
         }
@@ -207,80 +217,86 @@
           gameState = 'ready';
           ball = initBall();
           hoop = randomHoop();
+          isAiming = false;
           if (!animId) loop();
         }
 
         function readyNext() {
           hoop = randomHoop();
           ball = initBall();
+          isAiming = false;
           gameState = 'ready';
-          draw();
         }
 
         function scoreShot() {
-          const multiplier = Math.min(streak + 1, 10);
-          score += 10 * multiplier;
+          const mult = Math.min(streak + 1, 10);
+          score += 10 * mult;
           streak++;
           scoreEl.textContent = score;
           streakEl.textContent = streak;
           saveBest();
-          // Brief celebration flash, then next round
-          setTimeout(() => { if (gameState !== 'paused') readyNext(); }, 400);
+          setTimeout(() => { if (gameState !== 'paused') readyNext(); }, 350);
         }
 
         function missShot() {
           streak = 0;
           streakEl.textContent = '0';
-          // Allow ball to bounce/settle, then reset
           setTimeout(() => {
             if (gameState === 'shooting') readyNext();
-          }, 1200);
+          }, 800);
         }
 
-        // ─── Aiming ─────────────────────────────────────────
+        // ─── Aiming (CSS-pixel based, dpr-independent) ──────
 
-        function startAim(mx, my) {
+        function startAim(clientX, clientY) {
           if (gameState !== 'ready') return;
-          const dx = mx - ball.x;
-          const dy = my - ball.y;
-          // Only start aiming if clicking near the ball
-          if (dx * dx + dy * dy > (ball.r + 20) * (ball.r + 20)) return;
-          dragStart = { x: mx, y: my };
-          dragCurrent = { x: mx, y: my };
+          const pos = getCssPos(clientX, clientY);
+          // Check if clicking near the ball (in CSS pixels)
+          const rect = canvas.getBoundingClientRect();
+          const ballCssX = (ball.x / dpr);
+          const ballCssY = (ball.y / dpr);
+          const dx = pos.x - ballCssX;
+          const dy = pos.y - ballCssY;
+          if (dx * dx + dy * dy > ((ball.r / dpr) + 20) * ((ball.r / dpr) + 20)) return;
+
+          aimCssX = pos.x;
+          aimCssY = pos.y;
+          isAiming = true;
           gameState = 'aiming';
         }
 
-        function updateAim(mx, my) {
+        function updateAim(clientX, clientY) {
           if (gameState !== 'aiming') return;
-          dragCurrent = { x: mx, y: my };
-          const dx = ball.x - dragCurrent.x;  // reverse: pull back = shoot forward
-          const dy = ball.y - dragCurrent.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          const maxDist = W * 0.45;
-          const clamped = Math.min(dist, maxDist);
-          const factor = clamped / (dist || 1);
-          const speed = clamped * POWER_SCALE;
-          aimVx = dx * factor * POWER_SCALE;
-          aimVy = dy * factor * POWER_SCALE;
-          // Clamp speed
-          const spd = Math.sqrt(aimVx * aimVx + aimVy * aimVy);
-          if (spd > MAX_POWER) {
-            const s = MAX_POWER / spd;
-            aimVx *= s; aimVy *= s;
-          }
+          const pos = getCssPos(clientX, clientY);
+          aimCssX = pos.x;
+          aimCssY = pos.y;
           draw();
-          drawTrajectory(ball.x, ball.y, aimVx, aimVy, 60);
         }
 
-        function releaseAim(mx, my) {
+        function releaseAim() {
           if (gameState !== 'aiming') return;
-          dragCurrent = { x: mx, y: my };
-          updateAim(mx, my);
-          // Launch
-          ball.vx = aimVx;
-          ball.vy = aimVy;
+          isAiming = false;
+
+          // Compute velocity in canvas pixel space
+          const rect = canvas.getBoundingClientRect();
+          const ballCssX = ball.x / dpr;
+          const ballCssY = ball.y / dpr;
+          const dx = ballCssX - aimCssX;
+          const dy = ballCssY - aimCssY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 5) { gameState = 'ready'; draw(); return; }
+
+          const maxDist = rect.width * 0.45;
+          const clamped = Math.min(dist, maxDist);
+          const speed = Math.min(clamped * POWER_SCALE, MAX_POWER);
+          const normX = dx / dist;
+          const normY = dy / dist;
+
+          // Velocity in canvas pixels (multiply by dpr for canvas coordinate space)
+          ball.vx = normX * speed;
+          ball.vy = normY * speed;
+
           gameState = 'shooting';
-          draw();
         }
 
         // ─── Physics ────────────────────────────────────────
@@ -288,10 +304,7 @@
         function update() {
           if (gameState !== 'shooting') return;
 
-          // Gravity
           ball.vy += GRAVITY;
-
-          // Move
           ball.x += ball.vx;
           ball.y += ball.vy;
 
@@ -311,31 +324,30 @@
           if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = -ball.vy * BOUNCE; }
 
           // Backboard bounce
-          const bbLeft = hoop.x - 4;
-          const bbRight = hoop.x + 4;
-          const bbTop = hoop.y - HOOP_BACKBOARD_H(H) / 2;
-          const bbBottom = hoop.y + HOOP_BACKBOARD_H(H) / 2;
+          const bbHalf = 4;
+          const bbH = H / 7;
+          const isRight = hoop.backboardSide === 'right';
+          const bbLeft = isRight ? hoop.x - bbHalf : hoop.x - bbHalf;
+          const bbRight = isRight ? hoop.x + bbHalf : hoop.x + bbHalf;
+          const bbTop = hoop.y - bbH / 2;
+          const bbBottom = hoop.y + bbH / 2;
+
           if (ball.x + ball.r > bbLeft && ball.x - ball.r < bbRight &&
               ball.y + ball.r > bbTop && ball.y - ball.r < bbBottom) {
-            if (ball.vx > 0 && hoop.backboardSide === 'right') {
-              ball.x = bbLeft - ball.r;
-              ball.vx = -ball.vx * BOUNCE;
-            } else if (ball.vx < 0 && hoop.backboardSide === 'left') {
-              ball.x = bbRight + ball.r;
+            const bounceDir = isRight ? -1 : 1;
+            if ((isRight && ball.vx > 0) || (!isRight && ball.vx < 0)) {
+              ball.x = isRight ? bbLeft - ball.r : bbRight + ball.r;
               ball.vx = -ball.vx * BOUNCE;
             }
           }
 
-          // Score detection: ball passes through hoop rim (from above)
+          // Score detection
           if (!hoop.scored) {
-            const rimOpenLeft = hoop.backboardSide === 'right'
-              ? hoop.x - hoop.rimW : hoop.x;
-            const rimOpenRight = hoop.backboardSide === 'right'
-              ? hoop.x : hoop.x + hoop.rimW;
-            const rimY = hoop.y;
-            const tolerance = ball.r * 1.8;
+            const rimOpenLeft = isRight ? hoop.x - hoop.rimW : hoop.x;
+            const rimOpenRight = isRight ? hoop.x : hoop.x + hoop.rimW;
+            const tol = ball.r * 1.8;
 
-            if (ball.y > rimY - tolerance && ball.y < rimY + tolerance &&
+            if (ball.y > hoop.y - tol && ball.y < hoop.y + tol &&
                 ball.x > rimOpenLeft && ball.x < rimOpenRight &&
                 ball.vy > 0) {
               hoop.scored = true;
@@ -344,38 +356,35 @@
             }
           }
 
-          // Out of bounds / settled: miss
+          // Out of bounds → miss
           if (ball.y > H + 50 || ball.x < -50 || ball.x > W + 50) {
             missShot();
             return;
           }
 
-          // Ball settled on floor with almost no movement
+          // Settled on floor → miss
           if (ball.y >= H * COURT_FLOOR_RATIO - ball.r - 1 &&
               Math.abs(ball.vy) < 0.3 && Math.abs(ball.vx) < 0.3 &&
-              gameState === 'shooting') {
-            // Check if already tried scoring and missed
-            if (!hoop.scored) {
-              missShot();
-              return;
-            }
+              !hoop.scored && gameState === 'shooting') {
+            missShot();
           }
         }
 
         // ─── Drawing ────────────────────────────────────────
 
-        function drawTrajectory(sx, sy, vx, vy, steps) {
+        function drawTrajectory(sx, sy, vxCss, vyCss, steps) {
+          const rect = canvas.getBoundingClientRect();
           let x = sx, y = sy;
-          let cvx = vx, cvy = vy;
-          ctx.fillStyle = 'rgba(255,255,255,0.25)';
+          let vx = vxCss, vy = vyCss;
+          ctx.fillStyle = 'rgba(255,255,255,0.20)';
           for (let i = 0; i < steps; i++) {
-            cvy += GRAVITY;
-            x += cvx;
-            y += cvy;
-            if (y > H * COURT_FLOOR_RATIO || x < 0 || x > W || y < 0) break;
+            vy += GRAVITY;
+            x += vx;
+            y += vy;
+            if (y > H * COURT_FLOOR_RATIO || x < -10 || x > W + 10 || y < -10) break;
             if (i % 3 === 0) {
               ctx.beginPath();
-              ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+              ctx.arc(x, y, 1.5 * dpr, 0, Math.PI * 2);
               ctx.fill();
             }
           }
@@ -389,82 +398,64 @@
           ctx.fillRect(0, 0, W, H);
 
           // Court floor
+          const floorY = H * COURT_FLOOR_RATIO;
           ctx.fillStyle = '#22262e';
-          ctx.fillRect(0, H * COURT_FLOOR_RATIO, W, H * (1 - COURT_FLOOR_RATIO));
+          ctx.fillRect(0, floorY, W, H - floorY);
           ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-          ctx.lineWidth = 1;
+          ctx.lineWidth = 1 * dpr;
           ctx.beginPath();
-          ctx.moveTo(0, H * COURT_FLOOR_RATIO);
-          ctx.lineTo(W, H * COURT_FLOOR_RATIO);
+          ctx.moveTo(0, floorY);
+          ctx.lineTo(W, floorY);
           ctx.stroke();
 
           // ─── Hoop ──────────────────────────────────────────
-          const rimY = hoop.y;
-          const rimW = hoop.rimW;
-          const bbH = HOOP_BACKBOARD_H(H);
           const isRight = hoop.backboardSide === 'right';
-          const rimLeft = isRight ? hoop.x - rimW : hoop.x;
-          const rimRight = isRight ? hoop.x : hoop.x + rimW;
-          const bbLeft = isRight ? hoop.x - 5 : hoop.x - 5;
-          const bbRight = isRight ? hoop.x + 5 : hoop.x + 5;
+          const rimL = isRight ? hoop.x - hoop.rimW : hoop.x;
+          const rimR = isRight ? hoop.x : hoop.x + hoop.rimW;
+          const bbH = H / 7;
+          const bbHalf = 4 * dpr;
 
           // Backboard
-          ctx.fillStyle = 'rgba(255,255,255,0.15)';
-          ctx.fillRect(isRight ? hoop.x - 4 : hoop.x - 4,
-                       rimY - bbH / 2, 8, bbH);
+          ctx.fillStyle = 'rgba(255,255,255,0.12)';
+          ctx.fillRect(hoop.x - bbHalf, hoop.y - bbH / 2, bbHalf * 2, bbH);
+          ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+          ctx.lineWidth = 1.5 * dpr;
+          ctx.strokeRect(hoop.x - bbHalf, hoop.y - bbH / 2, bbHalf * 2, bbH);
 
-          // Backboard border
-          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(isRight ? hoop.x - 4 : hoop.x - 4,
-                         rimY - bbH / 2, 8, bbH);
-
-          // Rim line
+          // Rim
           ctx.strokeStyle = '#e74c3c';
-          ctx.lineWidth = Math.max(2.5, W / 120);
+          ctx.lineWidth = Math.max(2.5, W / 120) * dpr;
           ctx.beginPath();
-          ctx.moveTo(rimLeft, rimY);
-          ctx.lineTo(rimRight, rimY);
+          ctx.moveTo(rimL, hoop.y);
+          ctx.lineTo(rimR, hoop.y);
           ctx.stroke();
 
-          // Small rim connector to backboard
-          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(hoop.x, rimY - bbH / 2);
-          ctx.lineTo(hoop.x, rimY + bbH / 2);
-          ctx.stroke();
-
-          // Net (simple lines below rim)
-          ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-          ctx.lineWidth = 1;
+          // Net
+          ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+          ctx.lineWidth = 1 * dpr;
           const netLen = Math.max(8, W / 25);
-          const segments = 5;
-          for (let i = 0; i <= segments; i++) {
-            const t = i / segments;
-            const nx = rimLeft + t * rimW;
-            const sway = Math.sin(t * Math.PI) * rimW * 0.15;
+          const segs = 5;
+          for (let i = 0; i <= segs; i++) {
+            const t = i / segs;
+            const nx = rimL + t * hoop.rimW;
             ctx.beginPath();
-            ctx.moveTo(nx, rimY);
-            ctx.lineTo(nx + sway * 0.3, rimY + netLen);
+            ctx.moveTo(nx, hoop.y);
+            ctx.lineTo(nx + Math.sin(t * Math.PI) * hoop.rimW * 0.12, hoop.y + netLen);
             ctx.stroke();
           }
-          // Horizontal net lines
           for (let j = 1; j <= 2; j++) {
-            const yy = rimY + netLen * j / 3;
+            const yy = hoop.y + netLen * j / 3;
             ctx.beginPath();
-            for (let i = 0; i <= segments; i++) {
-              const t = i / segments;
-              const nx = rimLeft + t * rimW;
-              const sway = Math.sin(t * Math.PI) * rimW * 0.1 * (j / 3);
-              if (i === 0) ctx.moveTo(nx + sway * 0.3, yy);
-              else ctx.lineTo(nx + sway * 0.3, yy);
+            for (let i = 0; i <= segs; i++) {
+              const t = i / segs;
+              const nx = rimL + t * hoop.rimW;
+              const sway = Math.sin(t * Math.PI) * hoop.rimW * 0.08 * (j / 3);
+              i === 0 ? ctx.moveTo(nx + sway, yy) : ctx.lineTo(nx + sway, yy);
             }
             ctx.stroke();
           }
 
           // ─── Ball ──────────────────────────────────────────
-          // Basketball texture
           const br = ball.r;
           ctx.fillStyle = '#c86428';
           ctx.beginPath();
@@ -472,71 +463,75 @@
           ctx.fill();
 
           // Basketball lines
-          ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-          ctx.lineWidth = 1;
-          // Vertical line
-          ctx.beginPath();
-          ctx.moveTo(ball.x, ball.y - br);
-          ctx.lineTo(ball.x, ball.y + br);
-          ctx.stroke();
-          // Horizontal line
-          ctx.beginPath();
-          ctx.moveTo(ball.x - br, ball.y);
-          ctx.lineTo(ball.x + br, ball.y);
-          ctx.stroke();
-          // Curve lines
-          ctx.beginPath();
-          ctx.arc(ball.x - br * 0.5, ball.y, br * 0.7, -Math.PI * 0.4, Math.PI * 0.4);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.arc(ball.x + br * 0.5, ball.y, br * 0.7, Math.PI * 0.6, Math.PI * 1.4);
-          ctx.stroke();
+          ctx.strokeStyle = 'rgba(0,0,0,0.20)';
+          ctx.lineWidth = 0.8 * dpr;
+          ctx.beginPath(); ctx.moveTo(ball.x, ball.y - br); ctx.lineTo(ball.x, ball.y + br); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(ball.x - br, ball.y); ctx.lineTo(ball.x + br, ball.y); ctx.stroke();
+          ctx.beginPath(); ctx.arc(ball.x - br * 0.5, ball.y, br * 0.7, -Math.PI * 0.4, Math.PI * 0.4); ctx.stroke();
+          ctx.beginPath(); ctx.arc(ball.x + br * 0.5, ball.y, br * 0.7, Math.PI * 0.6, Math.PI * 1.4); ctx.stroke();
 
-          // Ball highlight
-          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          // Highlight
+          ctx.fillStyle = 'rgba(255,255,255,0.12)';
           ctx.beginPath();
           ctx.arc(ball.x - br * 0.3, ball.y - br * 0.3, br * 0.35, 0, Math.PI * 2);
           ctx.fill();
 
-          // ─── Aiming guide (when dragging) ──────────────────
-          if (gameState === 'aiming' && dragStart && dragCurrent) {
-            // Slingshot line
-            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-            ctx.lineWidth = 1.5;
-            ctx.setLineDash([4, 4]);
+          // ─── Aiming ────────────────────────────────────────
+          if (gameState === 'aiming' && isAiming) {
+            const ballCssX = ball.x / dpr;
+            const ballCssY = ball.y / dpr;
+
+            // Slingshot line (CSS pixels → canvas)
+            ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.setLineDash([4 * dpr, 4 * dpr]);
             ctx.beginPath();
             ctx.moveTo(ball.x, ball.y);
-            ctx.lineTo(dragCurrent.x, dragCurrent.y);
+            ctx.lineTo(aimCssX * dpr, aimCssY * dpr);
             ctx.stroke();
             ctx.setLineDash([]);
 
-            // Power indicator
-            const dist = Math.sqrt(
-              (ball.x - dragCurrent.x) ** 2 + (ball.y - dragCurrent.y) ** 2);
-            const maxDist = W * 0.45;
-            const power = Math.min(dist / maxDist, 1);
-            const barW = W * 0.3;
-            const barH = 6;
-            const barX = (W - barW) / 2;
-            const barY = H * COURT_FLOOR_RATIO + 15;
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            ctx.fillRect(barX, barY, barW, barH);
-            ctx.fillStyle = power > 0.7 ? '#e74c3c' : power > 0.4 ? '#f0c040' : '#2da44e';
-            ctx.fillRect(barX, barY, barW * power, barH);
+            // Trajectory preview
+            const dx = ballCssX - aimCssX;
+            const dy = ballCssY - aimCssY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 5) {
+              const rect = canvas.getBoundingClientRect();
+              const maxDistCss = rect.width * 0.45;
+              const clamped = Math.min(dist, maxDistCss);
+              const speed = Math.min(clamped * POWER_SCALE, MAX_POWER);
+              const normX = dx / dist;
+              const normY = dy / dist;
+              // Convert to canvas coords for trajectory drawing
+              drawTrajectory(ball.x, ball.y, normX * speed, normY * speed, 55);
+            }
+
+            // Power bar (CSS pixel positioning)
+            const rect = canvas.getBoundingClientRect();
+            const maxDistCss = rect.width * 0.45;
+            const powerPct = Math.min(dist / maxDistCss, 1);
+            const barW = rect.width * 0.32;
+            const barH = 5 * dpr;
+            const barX = (W - barW * dpr) / 2;
+            const barY = floorY + 12 * dpr;
+            ctx.fillStyle = 'rgba(255,255,255,0.08)';
+            ctx.fillRect(barX, barY, barW * dpr, barH);
+            ctx.fillStyle = powerPct > 0.7 ? '#e74c3c' : powerPct > 0.4 ? '#f0c040' : '#2da44e';
+            ctx.fillRect(barX, barY, barW * dpr * powerPct, barH);
           }
 
-          // "Ready" indicator
+          // Ready indicator
           if (gameState === 'ready') {
-            ctx.fillStyle = 'rgba(255,255,255,0.3)';
-            ctx.font = Math.round(W / 30) + 'px "Times New Roman", Georgia, serif';
+            ctx.fillStyle = 'rgba(255,255,255,0.25)';
+            ctx.font = (W / 30) + 'px "Times New Roman", Georgia, serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('Drag the ball to aim', W / 2, H * 0.35);
+            ctx.fillText('Drag the ball', W / 2, H * 0.32);
           }
 
-          // Score flash on made shot
-          if (hoop.scored && gameState === 'shooting') {
-            ctx.fillStyle = 'rgba(45, 164, 78, 0.15)';
+          // Score flash
+          if (hoop && hoop.scored && gameState === 'shooting') {
+            ctx.fillStyle = 'rgba(45, 164, 78, 0.12)';
             ctx.fillRect(0, 0, W, H);
           }
         }
@@ -552,9 +547,10 @@
         // ─── Controls ───────────────────────────────────────
 
         function togglePause() {
-          if (gameState === 'idle' || gameState === 'won') return;
+          if (gameState === 'idle') return;
           if (gameState === 'paused') {
-            gameState = 'ready';
+            if (isAiming) gameState = 'aiming';
+            else gameState = 'ready';
             document.getElementById('btn-pause').textContent = 'Pause';
           } else {
             gameState = 'paused';
@@ -562,96 +558,39 @@
           }
         }
 
-        // Mouse
+        // Mouse — track on document so drag works outside canvas
         canvas.addEventListener('mousedown', (e) => {
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (e.clientX - rect.left) * scaleX;
-          const my = (e.clientY - rect.top) * scaleY;
-          startAim(mx, my);
+          startAim(e.clientX, e.clientY);
         });
 
-        canvas.addEventListener('mousemove', (e) => {
-          if (gameState !== 'aiming') return;
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (e.clientX - rect.left) * scaleX;
-          const my = (e.clientY - rect.top) * scaleY;
-          updateAim(mx, my);
+        document.addEventListener('mousemove', (e) => {
+          updateAim(e.clientX, e.clientY);
         });
 
-        canvas.addEventListener('mouseup', (e) => {
-          if (gameState !== 'aiming') return;
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (e.clientX - rect.left) * scaleX;
-          const my = (e.clientY - rect.top) * scaleY;
-          releaseAim(mx, my);
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-          if (gameState === 'aiming') {
-            // Cancel aim
-            gameState = 'ready';
-            draw();
-          }
+        document.addEventListener('mouseup', () => {
+          releaseAim();
         });
 
         // Touch
         canvas.addEventListener('touchstart', (e) => {
           e.preventDefault();
           const t = e.touches[0];
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (t.clientX - rect.left) * scaleX;
-          const my = (t.clientY - rect.top) * scaleY;
-          startAim(mx, my);
+          startAim(t.clientX, t.clientY);
         }, { passive: false });
 
         canvas.addEventListener('touchmove', (e) => {
           e.preventDefault();
-          if (gameState !== 'aiming') return;
           const t = e.touches[0];
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (t.clientX - rect.left) * scaleX;
-          const my = (t.clientY - rect.top) * scaleY;
-          updateAim(mx, my);
+          updateAim(t.clientX, t.clientY);
         }, { passive: false });
 
         canvas.addEventListener('touchend', (e) => {
-          if (gameState !== 'aiming') return;
-          const t = e.changedTouches[0];
-          const rect = canvas.getBoundingClientRect();
-          const scaleX = W / (rect.width || 1);
-          const scaleY = H / (rect.height || 1);
-          const mx = (t.clientX - rect.left) * scaleX;
-          const my = (t.clientY - rect.top) * scaleY;
-          releaseAim(mx, my);
+          releaseAim();
         }, { passive: true });
 
         // Keyboard
         document.addEventListener('keydown', (e) => {
           if (e.key === 'p' || e.key === 'P') { e.preventDefault(); togglePause(); }
-          if (e.key === ' ' || e.key === 'Enter') {
-            e.preventDefault();
-            if (gameState === 'ready') {
-              // Auto-shot with random-ish aim for keyboard users
-              // Launch with default angle/power
-              const dx = hoop.x - ball.x;
-              const dy = hoop.y - ball.y;
-              const angle = Math.atan2(dy, dx);
-              const speed = Math.min(MAX_POWER, Math.sqrt(dx*dx + dy*dy) * 0.06);
-              ball.vx = Math.cos(angle) * speed;
-              ball.vy = Math.sin(angle) * speed - 2; // arc up
-              gameState = 'shooting';
-            }
-          }
         });
 
         // ─── Wire Buttons ──────────────────────────────────
