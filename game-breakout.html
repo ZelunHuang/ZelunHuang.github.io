@@ -333,13 +333,15 @@
             }
           }
 
-          // Score detection
+          // Score detection — ball must pass through the rim opening from above
           if (!hoop.scored) {
             const rimOpenLeft = isRight ? hoop.x - hoop.rimW : hoop.x;
             const rimOpenRight = isRight ? hoop.x : hoop.x + hoop.rimW;
-            const tol = ball.r * 1.8;
+            // Tight vertical band: ball center must be near the rim plane
+            // Horizontal: ball center must be within the opening (not near edges)
+            const tol = ball.r * 0.4;
             if (ball.y > hoop.y - tol && ball.y < hoop.y + tol &&
-                ball.x > rimOpenLeft && ball.x < rimOpenRight &&
+                ball.x > rimOpenLeft + ball.r * 0.5 && ball.x < rimOpenRight - ball.r * 0.5 &&
                 ball.vy > 0) {
               hoop.scored = true;
               scoreShot();
